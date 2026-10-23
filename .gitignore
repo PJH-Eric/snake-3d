@@ -40,3 +40,5 @@ CoreTests~/obj/
 CoreTests~/golden.json
 !CoreTests~/CoreTests.csproj
 CoreTests~/snap.json
+GameCheck~/bin/
+GameCheck~/obj/
