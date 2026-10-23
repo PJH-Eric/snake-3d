@@ -217,6 +217,31 @@ static class Program
             True(strongWins >= 8, "強的只贏 " + strongWins + "/" + games);
         });
 
+        Console.WriteLine("\n線上快照");
+        if (File.Exists("snap.json"))
+        {
+            Test("伺服器快照解碼：與網頁版 applySnapshot 的結果相同", () =>
+            {
+                var d = Json.Parse(File.ReadAllText("snap.json"));
+                var v = ViewState.FromStartInfo(Json.Get(d, "info"));
+                double t = 0;
+                foreach (var sn in Json.Arr(d, "snaps")) { v.ApplySnapshot(sn, t); t += 0.067; }
+                var sig = Json.Get(d, "sig");
+                Eq(v.Foods.Count, Json.Int(sig, "foods"), "果實數");
+                var ps = Json.Arr(sig, "players");
+                for (int i = 0; i < ps.Count; i++)
+                {
+                    var a = (List<object>)ps[i]; var p = v.Players[i];
+                    Eq(p.Alive, (bool)a[0]); Eq(p.Score, (int)Json.N(a[1])); Near(p.Len, Json.N(a[2]), 1e-9);
+                    var first = (List<object>)a[3];
+                    for (int k = 0; k < first.Count; k++) Near(p.Pts[k], Json.N(first[k]), 1e-9, "蛇身點 " + k);
+                    Eq(p.Pts.Length, (int)Json.N(a[4]), "蛇身點數"); Near(p.Ang, Json.N(a[5]), 1e-9);
+                }
+                Eq(v.Rocks.Count > 0, true);
+            });
+        }
+        else Console.WriteLine("  （沒有 snap.json，略過；cd CoreTests~ 後用 node golden.js 附近的指令產生）");
+
         string goldenPath = args.Length > 0 ? args[0] : "golden.json";
         if (File.Exists(goldenPath))
         {
