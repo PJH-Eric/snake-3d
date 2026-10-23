@@ -1,0 +1,41 @@
+# Unity 產生的資料夾
+/[Ll]ibrary/
+/[Tt]emp/
+/[Oo]bj/
+/[Bb]uild/
+/[Bb]uilds/
+/[Ll]ogs/
+/[Uu]ser[Ss]ettings/
+/[Mm]emoryCaptures/
+/[Rr]ecordings/
+
+# IDE / 暫存
+.vs/
+.idea/
+.vscode/
+*.csproj
+*.sln
+*.suo
+*.user
+*.pidb
+*.booproj
+*.svd
+*.pdb
+*.mdb
+*.opendb
+*.VC.db
+*.apk
+*.aab
+*.unitypackage
+sysinfo.txt
+crashlytics-build.gradle
+
+# 秘密與本機設定
+.env
+.env.local
+
+# 規則核心測試（dotnet）的產物；golden.json 由 node golden.js 重新產生
+CoreTests~/bin/
+CoreTests~/obj/
+CoreTests~/golden.json
+!CoreTests~/CoreTests.csproj
