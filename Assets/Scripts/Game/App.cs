@@ -58,6 +58,9 @@ namespace Snake3D
             I = this;
             Application.targetFrameRate = 60;
             QualitySettings.vSyncCount = 0;
+#if UNITY_WEBGL && !UNITY_EDITOR
+            WebGLInput.mobileKeyboardSupport = true;   // 手機／平板點輸入框時叫出系統鍵盤
+#endif
             Store.Load();
             Loc.Init(Store.D.lang, Application.systemLanguage.ToString());
             string injected = "";
