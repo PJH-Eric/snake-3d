@@ -1,4 +1,4 @@
-// 由網頁版 public/js/locales.js 自動轉出（node Tools/genloc.js ../snake-3d），請勿手改；要改字請改網頁版字典後重新產生。
+// 由 Backend~/public/js/locales.js 自動轉出（node Tools/genloc.js），請勿手改；要改字請改 Backend~ 的字典後重新產生。
 namespace Snake3D
 {
     public static class LocData

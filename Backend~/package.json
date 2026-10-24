@@ -1,0 +1,15 @@
+{
+  "name": "snake-3d-unity-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Unity 貪吃蛇的權威房間伺服器與規則參照",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/verify.js && node tests/rooms.js && node scripts/online-check.js"
+  },
+  "dependencies": {}
+}

@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 
 namespace Snake3D
 {
-    /// <summary>繁體中文／English 兩種語言。字典由網頁版 locales.js 轉出（LocData）。</summary>
+    /// <summary>繁體中文／English 兩種語言。字典由 Backend~/public/js/locales.js 轉出（LocData）。</summary>
     public static class Loc
     {
         public const string ZH = "zh-Hant", EN = "en";

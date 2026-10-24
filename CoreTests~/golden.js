@@ -1,7 +1,7 @@
-/* 產生金標準：用網頁版的 rules.js / ai.js 跑固定種子的對局，逐節拍記錄，供 C# 版比對。
- * 用法：node golden.js <網頁版專案路徑> > golden.json */
+/* 產生金標準：用專案內權威伺服器的 rules.js / ai.js 跑固定種子的對局，逐節拍記錄，供 C# 版比對。
+ * 用法：node golden.js <參照伺服器路徑，可省略> > golden.json */
 const path = require('path');
-const web = path.resolve(process.argv[2] || '../../snake-3d');
+const web = path.resolve(process.argv[2] || path.join(__dirname, '../Backend~'));
 const R = require(path.join(web, 'public/js/rules.js'));
 const AI = require(path.join(web, 'public/js/ai.js'));
 
