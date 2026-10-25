@@ -47,25 +47,29 @@ namespace Snake3D
                 if (origin != null) { ServerUrl = origin; Source = "same-origin"; Status = "ok"; return; }
                 ServerUrl = null; Source = "none"; Status = "unset"; return;
             }
-            if (!(raw.StartsWith("http://", StringComparison.OrdinalIgnoreCase) || raw.StartsWith("https://", StringComparison.OrdinalIgnoreCase)))
+            if (!TryHttpUri(raw, out var uri) || uri.UserInfo.Length > 0 || uri.Query.Length > 0 || uri.Fragment.Length > 0)
             { ServerUrl = null; Source = source; Status = "invalid"; Error = "cfg.notAbs"; return; }
-            if (href.StartsWith("https:", StringComparison.OrdinalIgnoreCase) && raw.StartsWith("http://", StringComparison.OrdinalIgnoreCase))
+            if (href.StartsWith("https:", StringComparison.OrdinalIgnoreCase) && uri.Scheme == Uri.UriSchemeHttp)
             { ServerUrl = null; Source = source; Status = "invalid"; Error = "cfg.mixed"; return; }
-            ServerUrl = raw.TrimEnd('/'); Source = source; Status = "ok";
+            ServerUrl = uri.AbsoluteUri.TrimEnd('/'); Source = source; Status = "ok";
+        }
+
+        static bool TryHttpUri(string value, out Uri uri)
+        {
+            return Uri.TryCreate(value, UriKind.Absolute, out uri) && uri.Host.Length > 0
+                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
         }
 
         static string Origin(string href)
         {
-            if (!(href.StartsWith("http://") || href.StartsWith("https://"))) return null;
-            int s = href.IndexOf("://") + 3;
-            int e = href.IndexOfAny(new[] { '/', '?', '#' }, s);
-            return e < 0 ? href : href.Substring(0, e);
+            return TryHttpUri(href, out var uri) ? uri.GetLeftPart(UriPartial.Authority) : null;
         }
 
         public static string WsUrl(string baseUrl)
         {
             string u = baseUrl.TrimEnd('/');
-            if (u.StartsWith("https://")) u = "wss://" + u.Substring(8); else if (u.StartsWith("http://")) u = "ws://" + u.Substring(7);
+            if (u.StartsWith("https://", StringComparison.OrdinalIgnoreCase)) u = "wss://" + u.Substring(8);
+            else if (u.StartsWith("http://", StringComparison.OrdinalIgnoreCase)) u = "ws://" + u.Substring(7);
             return u + "/ws";
         }
     }
@@ -143,7 +147,9 @@ namespace Snake3D
                 {
                     req.timeout = 8;
                     yield return req.SendWebRequest();
-                    if (req.result == UnityWebRequest.Result.Success) { if (wantOpen && mySession == session) Connect(); yield break; }
+                    // 離開或重連後，舊請求即使失敗也不能覆寫新 session 的狀態。
+                    if (!wantOpen || mySession != session) yield break;
+                    if (req.result == UnityWebRequest.Result.Success) { Connect(); yield break; }
                 }
                 if (Time.realtimeSinceStartup - started > 90) break;
                 SetStatus("waking", Mathf.RoundToInt(Time.realtimeSinceStartup - started));

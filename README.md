@@ -34,11 +34,13 @@ node CoreTests~/golden.js > CoreTests~/golden.json
 dotnet run --project CoreTests~/CoreTests.csproj -- CoreTests~/golden.json # 規則與參照比對
 dotnet build GameCheck~/GameCheck.csproj # 非 Unity 環境的型別檢查
 dotnet build GameCheck~/GameCheck.csproj -p:DefineConstants=UNITY_WEBGL # WebGL 條件編譯的簽名檢查
-dotnet run --project GameCheck~/InputTests/InputTests.csproj # 純 C# 輸入狀態與 DPI／斷點計算
+dotnet run --project GameCheck~/InputTests/InputTests.csproj # 輸入、網址、喚醒狀態與 DPI／斷點計算
 npm --prefix Backend~ test # 權威伺服器、房間與真實 WebSocket
 ```
 `~` 結尾的資料夾 Unity 會忽略。比對資料須先產生並明確傳入 CoreTests；沒有提供時測試會註明略過，不能宣稱已完成比對。
-GameCheck 的 Unity 替身只供簽名檢查；InputTests 僅執行不呼叫 Unity 引擎的狀態與數學計算，不能取代 Play Mode、WebGL 建置或畫面驗收。所有使用同一專案輸出目錄的 dotnet 指令請依序執行。
+GameCheck 的 Unity 替身主要供簽名檢查；InputTests 執行純 C# 狀態與數學計算，並以可控 HTTP 回應替身手動推進喚醒協程，不能取代真實 Unity 網路、Play Mode、WebGL 建置或畫面驗收。所有使用同一專案輸出目錄的 dotnet 指令請依序執行。
+
+`GAME_SERVER_URL`／`?server=` 必須是有效的 HTTP(S) 基底網址，可包含連接埠及服務子路徑；不可包含帳密、查詢參數或 fragment，否則拼接 `/health` 與 `/ws` 無法正確運作。HTTPS 頁面必須搭配 HTTPS 後端。
 
 2026-10-25 修復與未執行的畫面矩陣見 [QA 記錄](docs/qa-2026-10-25.md)。
 

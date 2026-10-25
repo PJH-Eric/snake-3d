@@ -91,6 +91,8 @@ static class Program
         }
         Console.WriteLine("通過：多指持有、放開、移出、冪等重置、暫停輸入清理與恢復加速狀態（純 C#，未執行 Unity UI）");
         Console.WriteLine("通過：6 種 CSS 視窗與 1x/2x DPI 的縮放及斷點計算（未渲染畫面）");
+        NetTests.Run();
+        ConfigTests.Run();
         return 0;
     }
 }

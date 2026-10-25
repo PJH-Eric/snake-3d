@@ -1,5 +1,6 @@
 // UnityEngine 的「簽名替身」：只為了在沒有 Unity 的機器上做編譯檢查（型別、拼字、參數數量）。
-// 簽名依 Unity 6 公開 API 手寫，行為一律是空的——不可執行。
+// 簽名依 Unity 6 公開 API 手寫；引擎行為為空，不能拿來執行遊戲。
+// UnityWebRequest.GetForTest 可注入純 C# 的回應替身，僅供手動推進網路 IEnumerator 的狀態測試。
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -345,7 +346,8 @@ namespace UnityEngine.Networking
     {
         public enum Result { InProgress, Success, ConnectionError, ProtocolError, DataProcessingError }
         public Result result; public int timeout;
-        public static UnityWebRequest Get(string u) { return null; }
+        public static Func<string, UnityWebRequest> GetForTest;
+        public static UnityWebRequest Get(string u) { return GetForTest != null ? GetForTest(u) : null; }
         public UnityWebRequestAsyncOperation SendWebRequest() { return null; }
         public static string UnEscapeURL(string s) { return s; }
         public static string EscapeURL(string s) { return s; }
