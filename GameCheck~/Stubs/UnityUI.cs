@@ -13,7 +13,7 @@ namespace UnityEngine.EventSystems
     }
     public class BaseInputModule : MonoBehaviour { }
     public class StandaloneInputModule : BaseInputModule { }
-    public class PointerEventData { public int pointerId; public Vector2 position; public Vector2 delta; }
+    public class PointerEventData { public PointerEventData(EventSystem eventSystem) { } public int pointerId; public Vector2 position; public Vector2 delta; }
     public interface IPointerDownHandler { void OnPointerDown(PointerEventData e); }
     public interface IPointerUpHandler { void OnPointerUp(PointerEventData e); }
     public interface IPointerExitHandler { void OnPointerExit(PointerEventData e); }

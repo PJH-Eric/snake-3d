@@ -43,6 +43,16 @@ namespace Snake3D
         public int AutoAdj = -1;
         public bool AiDetail;
         public Online Online;
+        public bool InputSuspended { get; private set; }
+
+        void OnApplicationFocus(bool focused) { SuspendInput(!focused); }
+        void OnApplicationPause(bool paused) { SuspendInput(paused); }
+
+        void SuspendInput(bool suspended)
+        {
+            InputSuspended = suspended;
+            if (suspended && Current is GamePage game) game.ResetInput();
+        }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         static void Boot()
@@ -168,7 +178,14 @@ namespace Snake3D
             // 滑鼠／觸控點完按鈕後不要留著「鍵盤焦點」的黃色底，只有用鍵盤操作時才顯示
             if (Input.GetMouseButtonUp(0)) clearSel = true;
             for (int i = 0; i < Input.touchCount; i++) if (Input.GetTouch(i).phase == TouchPhase.Ended) clearSel = true;
-            if (clearSel && EventSystem.current != null) { clearSel = false; EventSystem.current.SetSelectedGameObject(null); }
+            if (clearSel && EventSystem.current != null)
+            {
+                clearSel = false;
+                var selected = EventSystem.current.currentSelectedGameObject;
+                // 點擊輸入欄後保留焦點，否則暱稱與聊天室會立刻失焦。
+                if (selected == null || selected.GetComponent<InputField>() == null)
+                    EventSystem.current.SetSelectedGameObject(null);
+            }
         }
 
         public void HandleBack()
@@ -227,6 +244,7 @@ namespace Snake3D
 
         public Ui.ModalHandle Modal(string title, bool closable = true, float width = 560)
         {
+            if (Current is GamePage game) game.ResetInput();
             var m = Ui.Modal(Layer, title, closable, width);
             modals.Add(m);
             return m;
@@ -235,11 +253,9 @@ namespace Snake3D
         public void CloseTopModal()
         {
             PruneModals();
-            for (int i = modals.Count - 1; i >= 0; i--)
-            {
-                // 不可關閉的彈窗（結算）不理會返回鍵
-                if (modals[i].Closable) { modals[i].Close(); return; }
-            }
+            // 不越過不可關閉的頂層結算去關閉底下的彈窗。
+            if (modals.Count > 0 && modals[modals.Count - 1].Closable)
+                modals[modals.Count - 1].Close();
         }
 
         public void CloseAllModals()
@@ -250,6 +266,7 @@ namespace Snake3D
 
         public Ui.ModalHandle ConfirmBox(string title, string text, string ok, Action onOk, bool danger = true)
         {
+            if (Current is GamePage game) game.ResetInput();
             var m = Ui.Confirm(Layer, title, text, ok, onOk, danger ? "danger" : "primary");
             modals.Add(m);
             return m;

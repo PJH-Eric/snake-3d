@@ -240,6 +240,7 @@ namespace Snake3D
 
         public override void Close()
         {
+            ResetInput();
             if (world != null) { world.Dispose(); world = null; }
             if (minimap != null) minimap.Destroy();
             if (kind == Kind.Online && App.I.Online != null)
@@ -255,16 +256,28 @@ namespace Snake3D
 
         public override void Relabel()
         {
+            ResetInput();
             hudSig = ""; hudAt = -1;
             world.Relabel(view, slot);
             if (boostLabel != null) boostLabel.text = Loc.T("boost.label");
             // 靜態文字（側欄標題、按鈕）要重建；遊戲狀態在 world / state，不受影響
             var keepOpen = sideOpen;
-            for (int i = Root.childCount - 1; i >= 0; i--) Destroy(Root.GetChild(i).gameObject);
+            if (minimap != null) minimap.Destroy();
+            Clear(Root);
             if (chat != null && App.I.Online != null) { App.I.Online.ChatPushed -= chatSub; App.I.Online.ChatReset -= chatResetSub; }
             chat = null;
             Build(Root);
             SetSide(keepOpen);
+            if (resultModal != null && resultModal.Mask != null)
+            {
+                resultModal.Close();
+                ShowResult(lastResult);
+            }
+            else if (menuModal != null && menuModal.Mask != null)
+            {
+                menuModal.Close();
+                OpenMenu();
+            }
         }
 
         static void Destroy(UnityEngine.Object o) { UnityEngine.Object.Destroy(o); }
@@ -294,7 +307,7 @@ namespace Snake3D
         void OnStickDown(PointerEventData e)
         {
             sawTouch = true;
-            if (slot < 0 || stickId != int.MinValue || App.I.ModalOpen) return;
+            if (!TouchVisible() || stickId != int.MinValue || App.I.ModalOpen || App.I.InputSuspended) return;
             bool fixedMode = Store.D.stickMode == "fixed";
             if (fixedMode)
             {
@@ -316,7 +329,7 @@ namespace Snake3D
 
         void OnStickDrag(PointerEventData e)
         {
-            if (e.pointerId != stickId) return;
+            if (e.pointerId != stickId || App.I.ModalOpen || App.I.InputSuspended) return;
             float scale = Mathf.Max(0.1f, App.I.UiScale);
             Vector2 d = (e.position - stickOrigin) / scale;
             float L = d.magnitude, max = 56f;
@@ -357,6 +370,17 @@ namespace Snake3D
             else Rules.SetBoost(state, slot, on);
         }
 
+        public void ResetInput()
+        {
+            boostKeys = boostTouch = false;
+            if (boostHold != null) boostHold.Reset();
+            SyncBoost();
+            pendingAim = double.NaN;
+            stickId = int.MinValue;
+            if (stickKnob != null) stickKnob.anchoredPosition = Vector2.zero;
+            if (stick != null) stick.gameObject.SetActive(false);
+        }
+
         void Aim(double a)
         {
             if (slot < 0 || view.Phase == "over") return;
@@ -380,7 +404,7 @@ namespace Snake3D
 
         void ReadKeyboard()
         {
-            if (slot < 0 || App.I.ModalOpen || TypingInField()) { if (boostKeys) { boostKeys = false; SyncBoost(); } return; }
+            if (slot < 0 || App.I.ModalOpen || App.I.InputSuspended || TypingInField()) { ResetInput(); return; }
             float dx = 0, dy = 0;
             if (Input.GetKey(KeyCode.A) || Input.GetKey(KeyCode.LeftArrow)) dx -= 1;
             if (Input.GetKey(KeyCode.D) || Input.GetKey(KeyCode.RightArrow)) dx += 1;
@@ -418,7 +442,7 @@ namespace Snake3D
 
         double StepSolo(float dt)
         {
-            if (App.I.ModalOpen) return Math.Min(1, acc / Rules.DT);   // 開著選單或設定就暫停
+            if (App.I.ModalOpen || App.I.InputSuspended) return Math.Min(1, acc / Rules.DT);
             var me = slot >= 0 ? Rules.PlayerBySlot(state, slot) : null;
             bool dead = me != null && !me.Alive && state.Phase == "play";
             acc += dt * (ff && dead ? 3 : 1);
@@ -739,9 +763,12 @@ namespace Snake3D
 
         bool recorded; int statW, statP; bool statShown;
 
+        ResultInfo lastResult;
+
         public void ShowResult(ResultInfo r)
         {
             if (resultModal != null && resultModal.Mask != null) return;
+            lastResult = r;
             if (menuModal != null && menuModal.Mask != null) menuModal.Close();
             var d = Store.D;
             bool challenge = r.Mode == "challenge";

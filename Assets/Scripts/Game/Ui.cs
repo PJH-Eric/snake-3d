@@ -575,7 +575,14 @@ namespace Snake3D
             public RectTransform Mask, Panel, Body;
             public bool Closable;
             public Action OnClose;
-            public void Close() { if (Mask != null) UnityEngine.Object.Destroy(Mask.gameObject); Mask = null; if (OnClose != null) OnClose(); }
+            public void Close()
+            {
+                if (Mask == null) return;
+                Mask.gameObject.SetActive(false);
+                UnityEngine.Object.Destroy(Mask.gameObject);
+                Mask = null;
+                if (OnClose != null) OnClose();
+            }
         }
 
         /// <summary>置中的彈窗：背景遮罩、標題列（含關閉鈕）、可捲動內容。內容過長時用自訂捲軸，不會超出畫面。</summary>
@@ -594,6 +601,9 @@ namespace Snake3D
             var panel = Obj("Panel", mask);
             h.Panel = panel;
             var pimg = panel.gameObject.AddComponent<Image>(); pimg.sprite = Round(Cream, Ink, 22, 4); pimg.type = Image.Type.Sliced;
+            // 攔截面板空白處的點擊，避免事件往上找到遮罩的關閉按鈕。
+            var blocker = panel.gameObject.AddComponent<Button>();
+            blocker.targetGraphic = pimg; blocker.transition = Selectable.Transition.None;
             panel.anchorMin = new Vector2(0.5f, 0.5f); panel.anchorMax = new Vector2(0.5f, 0.5f); panel.pivot = new Vector2(0.5f, 0.5f);
             var sizer = panel.gameObject.AddComponent<ModalSizer>(); sizer.width = width; sizer.maxHeightRatio = maxHeightRatio;
             var col = VBox(panel, 10, 16); Stretch(col);

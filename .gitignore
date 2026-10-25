@@ -42,6 +42,8 @@ CoreTests~/golden.json
 CoreTests~/snap.json
 GameCheck~/bin/
 GameCheck~/obj/
+GameCheck~/InputTests/bin/
+GameCheck~/InputTests/obj/
 /Assets/Resources/ServerUrl.txt
 /Assets/Resources/ServerUrl.txt.meta
 

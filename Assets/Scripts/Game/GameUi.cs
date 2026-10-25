@@ -23,13 +23,14 @@ namespace Snake3D
         int id = int.MinValue;
         public void OnPointerDown(PointerEventData e)
         {
-            if (e.pointerId < 0) return;   // 滑鼠不算
+            if (e.pointerId < 0 || Held) return;   // 只由第一根手指持有
             Held = true; id = e.pointerId; if (Changed != null) Changed(true, id);
         }
         public void OnPointerUp(PointerEventData e) { Release(e.pointerId); }
         public void OnPointerExit(PointerEventData e) { Release(e.pointerId); }
         void Release(int pid) { if (!Held || pid != id) return; Held = false; id = int.MinValue; if (Changed != null) Changed(false, pid); }
-        void OnDisable() { if (Held) { Held = false; if (Changed != null) Changed(false, id); } }
+        public void Reset() { if (Held) Release(id); }
+        void OnDisable() { Reset(); }
     }
 
     public sealed class ChatMsg { public string Role, Name, Text; }
