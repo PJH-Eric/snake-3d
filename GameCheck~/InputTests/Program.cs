@@ -22,6 +22,11 @@ static class Program
         return (T)target.GetType().GetField(field, BindingFlags.Instance | BindingFlags.NonPublic).GetValue(target);
     }
 
+    static void NotifyApp(App app, string method, bool value)
+    {
+        typeof(App).GetMethod(method, BindingFlags.Instance | BindingFlags.NonPublic).Invoke(app, new object[] { value });
+    }
+
     static int Main()
     {
         var changes = new List<bool>();
@@ -61,6 +66,20 @@ static class Program
         Rules.Step(state, Rules.DT);
         Check(!state.Players[0].Boosting, "恢復後規則不得繼續加速");
         game.ResetInput();
+        var app = new App { Current = game };
+        NotifyApp(app, "OnApplicationFocus", false);
+        NotifyApp(app, "OnApplicationPause", true);
+        NotifyApp(app, "OnApplicationPause", false);
+        Check(app.InputSuspended, "仍未取得焦點時，恢復事件不得提前解除暫停");
+        NotifyApp(app, "OnApplicationFocus", true);
+        Check(!app.InputSuspended, "恢復且取得焦點後才能繼續");
+        NotifyApp(app, "OnApplicationPause", true);
+        NotifyApp(app, "OnApplicationFocus", false);
+        NotifyApp(app, "OnApplicationFocus", true);
+        Check(app.InputSuspended, "仍在背景暫停時，取得焦點不得提前解除暫停");
+        NotifyApp(app, "OnApplicationPause", false);
+        Check(!app.InputSuspended, "事件以相反順序抵達也必須正確恢復");
+        Console.WriteLine("通過：失焦與暫停的兩種恢復順序");
         foreach (var size in new[] { (320f, 568f), (390f, 844f), (844f, 390f), (768f, 1024f), (1024f, 768f), (1440f, 900f) })
         {
             float scale = Lay.Scale(size.Item1, size.Item2, 1);

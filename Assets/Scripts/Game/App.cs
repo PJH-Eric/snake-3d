@@ -45,14 +45,15 @@ namespace Snake3D
         public bool AiDetail;
         public Online Online;
         public bool InputSuspended { get; private set; }
+        bool hasFocus = true, appPaused;
 
-        void OnApplicationFocus(bool focused) { SuspendInput(!focused); }
-        void OnApplicationPause(bool paused) { SuspendInput(paused); }
+        void OnApplicationFocus(bool focused) { hasFocus = focused; RefreshInputSuspended(); }
+        void OnApplicationPause(bool paused) { appPaused = paused; RefreshInputSuspended(); }
 
-        void SuspendInput(bool suspended)
+        void RefreshInputSuspended()
         {
-            InputSuspended = suspended;
-            if (suspended && Current is GamePage game) game.ResetInput();
+            InputSuspended = !hasFocus || appPaused;
+            if (InputSuspended && Current is GamePage game) game.ResetInput();
         }
 
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
