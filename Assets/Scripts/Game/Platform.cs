@@ -30,6 +30,7 @@ namespace Snake3D
         [DllImport("__Internal")] static extern void SnakeVibrate(int ms);
         [DllImport("__Internal")] static extern void SnakeSetPage(string lang, string title);
         [DllImport("__Internal")] static extern int SnakeIsTouchDevice();
+        [DllImport("__Internal")] static extern int SnakeCanvasCssWidth();
 
         public static string Href() { try { return Marshal.PtrToStringUTF8(SnakeGetHref()) ?? ""; } catch (Exception) { return ""; } }
         public static void ReplaceUrl(string path) { SnakeReplaceUrl(path); }
@@ -39,7 +40,9 @@ namespace Snake3D
         public static void Vibrate(int ms) { SnakeVibrate(ms); }
         public static void SetPage(string lang, string title) { SnakeSetPage(lang, title); }
         public static bool TouchDevice { get { return SnakeIsTouchDevice() == 1; } }
+        public static float PixelScale { get { return Screen.width / (float)Math.Max(1, SnakeCanvasCssWidth()); } }
 #else
+        public static float PixelScale { get { return 1f; } }
         public static string Href() { return ""; }
         public static void ReplaceUrl(string path) { }
         public static bool Copy(string text) { GUIUtility.systemCopyBuffer = text; return true; }

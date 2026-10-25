@@ -79,6 +79,10 @@ var SnakeBridge = {
     try { document.documentElement.lang = UTF8ToString(langPtr); document.title = UTF8ToString(titlePtr); } catch (e) {}
   },
 
+  SnakeCanvasCssWidth: function () {
+    return Math.max(1, Math.round(Module.canvas.getBoundingClientRect().width));
+  },
+
   SnakeIsTouchDevice: function () {
     try { return (('ontouchstart' in window) || navigator.maxTouchPoints > 0) && window.matchMedia && window.matchMedia('(pointer: coarse)').matches ? 1 : 0; } catch (e) { return 0; }
   }

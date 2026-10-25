@@ -86,7 +86,7 @@ namespace Snake3D
         void BuildHud()
         {
             // 上方：計時與分數 chips
-            hudRow = Ui.HBox(main, 10, 0, TextAnchor.MiddleCenter);
+            hudRow = Ui.Wrap(main, 8, TextAnchor.UpperCenter, true);
             hudRow.anchorMin = new Vector2(0, 1); hudRow.anchorMax = new Vector2(1, 1); hudRow.pivot = new Vector2(0.5f, 1);
             hudRow.offsetMin = new Vector2(150, -72); hudRow.offsetMax = new Vector2(-150, -10);
             var tb = Ui.Obj("Timer", hudRow);
@@ -94,7 +94,7 @@ namespace Snake3D
             var tl = tb.gameObject.AddComponent<HorizontalLayoutGroup>(); tl.padding = new RectOffset(14, 14, 6, 6); tl.childControlWidth = true; tl.childControlHeight = true;
             timerT = Ui.Label(tb, "--:--", 30, Ui.Ink, FontStyle.Bold, TextAnchor.MiddleCenter, false);
             Ui.Size(tb, minW: 100, minH: 52);
-            chips = Ui.HBox(hudRow, 8, 0, TextAnchor.MiddleLeft);
+            chips = Ui.Wrap(hudRow, 8, TextAnchor.UpperCenter, true);
 
             // 左上：離開／暫停、開資訊欄
             var tl2 = Ui.HBox(main, 8, 0, TextAnchor.MiddleLeft);
@@ -134,11 +134,13 @@ namespace Snake3D
             energyFill.fillMethod = Image.FillMethod.Horizontal; energyFill.fillOrigin = 0; energyFill.raycastTarget = false;
 
             // 出局／觀戰的提示列
-            ghost = Ui.HBox(main, 10, 12, TextAnchor.MiddleCenter);
-            ghost.anchorMin = ghost.anchorMax = new Vector2(0.5f, 0); ghost.pivot = new Vector2(0.5f, 0); ghost.anchoredPosition = new Vector2(0, 14);
+            ghost = Ui.Wrap(main, 10, TextAnchor.UpperCenter, true);
+            ghost.anchorMin = new Vector2(0, 0); ghost.anchorMax = new Vector2(1, 0); ghost.pivot = new Vector2(0.5f, 0);
+            ghost.offsetMin = new Vector2(12, 14); ghost.offsetMax = new Vector2(-12, 14);
+            ghost.GetComponent<WrapGroup>().padding = new RectOffset(12, 12, 12, 12);
             var gbg = ghost.gameObject.AddComponent<Image>(); gbg.sprite = Ui.Round(Ui.Paper, Ui.Ink, 16, 3); gbg.type = Image.Type.Sliced; gbg.raycastTarget = false;
-            var gfit = ghost.gameObject.AddComponent<ContentSizeFitter>(); gfit.horizontalFit = ContentSizeFitter.FitMode.PreferredSize; gfit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
-            ghostText = Ui.Label(ghost, "", 22, Ui.Ink, FontStyle.Bold, TextAnchor.MiddleLeft, false);
+            var gfit = ghost.gameObject.AddComponent<ContentSizeFitter>(); gfit.verticalFit = ContentSizeFitter.FitMode.PreferredSize;
+            ghostText = Ui.Label(ghost, "", 22, Ui.Ink, FontStyle.Bold, TextAnchor.MiddleLeft);
             ghost.gameObject.SetActive(false);
         }
 
@@ -213,8 +215,8 @@ namespace Snake3D
 
             if (kind == Kind.Online)
             {
-                chat = new ChatBox(col, 230, t => Net.Send(Net.Msg("chat", "text", t)));
-                Ui.Size(chat.Root, minH: 220, prefH: 300, flexH: 0);
+                chat = new ChatBox(sideScroll.Content, 230, t => Net.Send(Net.Msg("chat", "text", t)));
+                Ui.Size(chat.Root, minH: 420, prefH: 420, flexH: 0);
                 chat.Set(App.I.Online.ChatLog);
                 chatSub = m => { chat.Push(m); if (!sideOpen && m.Role != "sys") { unread++; PaintBadge(); } };
                 chatResetSub = () => chat.Set(App.I.Online.ChatLog);
@@ -432,8 +434,9 @@ namespace Snake3D
 
             PickWatch();
             UpdateLayout();
+            if (!App.I.ModalOpen && !App.I.InputSuspended && stickId == int.MinValue) PlaceFixedStick();
             float scale = App.I.UiScale;
-            float top = 64f * scale;
+            float top = (main.rect.width < 700 ? 200f : 72f) * scale;
             bool portrait = Screen.height > Screen.width;
             float bottom = TouchVisible() && portrait ? Mathf.Min(150f * scale, main.rect.height * scale * 0.16f) : 0f;
             world.Draw(view, slot, alpha, dt, Store.D.zoom, watch, top, bottom);
@@ -550,6 +553,8 @@ namespace Snake3D
             bool tv = TouchVisible();
             int key = Screen.width * 31 + Screen.height + (sideOpen ? 7 : 0) + (tv ? 13 : 0) + (Store.D.minimap ? 3 : 0)
                 + (Store.D.stickMode == "fixed" ? 5 : 0) + (Store.D.stickSide == "right" ? 11 : 0);
+            key = key * 31 + Lay.LogicalW.GetHashCode();
+            key = key * 31 + Lay.LogicalH.GetHashCode();
             if (!layoutDirty && key == lastLayoutKey) return;
             layoutDirty = false; lastLayoutKey = key;
 
@@ -562,13 +567,24 @@ namespace Snake3D
             // 寬螢幕：資訊欄固定在左側，遊戲主區讓出空間；窄螢幕：資訊欄是疊在上面的抽屜
             float off = wide && sideOpen ? sideW : 0f;
             main.offsetMin = new Vector2(off, 0); main.offsetMax = Vector2.zero;
-            hudRow.offsetMin = new Vector2(off > 0 ? 20 : 150, -72); hudRow.offsetMax = new Vector2(-150, -10);
+            // main 已扣除側欄，不可再次扣 off；窄版 HUD 排到工具列下方。
+            float mainW = lw - off;
+            bool compact = mainW < 700;
+            hudRow.offsetMin = new Vector2(compact ? 12 : (sideOpen ? 80 : 150), compact ? -210 : -72);
+            hudRow.offsetMax = new Vector2(compact ? -12 : -150, compact ? -80 : -10);
+            var mr = mapImg.rectTransform;
+            float mapSize = compact ? 92 : 132;
+            mr.sizeDelta = new Vector2(mapSize, mapSize);
+            mr.anchoredPosition = new Vector2(-12, compact ? -218 : -80);
+            countRt.sizeDelta = new Vector2(Mathf.Min(400, mainW - 24), 200);
+            hudSig = "";
 
             mapImg.gameObject.SetActive(Store.D.minimap);
             energyBar.gameObject.SetActive(!tv && slot >= 0);
 
             if (touchRoot != null)
             {
+                if (!tv && (boostTouch || stickId != int.MinValue)) ResetInput();
                 touchRoot.gameObject.SetActive(tv);
                 bool right = Store.D.stickSide == "right";
                 var bt = (RectTransform)boostHold.transform.parent;
@@ -679,7 +695,7 @@ namespace Snake3D
             }
             var list = new List<ViewPlayer>(view.Players);
             list.Sort((a, b) => b.Score.CompareTo(a.Score));
-            int room = mw < 620 ? 3 : mw < 900 ? 5 : 8;
+            int room = Math.Max(1, Math.Min(8, (int)((hudRow.rect.width - 120) / 100)));
             if (list.Count > room)
             {
                 var top = list.GetRange(0, room);
@@ -704,10 +720,10 @@ namespace Snake3D
                 Ui.AnimalFace(hr, p.Animal, 34);
                 var vb = Ui.VBox(hr, 0, 0);
                 Ui.Size(vb, flexW: 1, minW: 0);
-                Ui.Label(vb, Names.P(p.Kind, p.Animal, p.Name) + (p.Slot == slot ? Loc.T("res.youTag") : ""), 22, p.Alive ? Ui.Ink : Ui.Muted, FontStyle.Bold, TextAnchor.UpperLeft, false);
+                Ui.Label(vb, Names.P(p.Kind, p.Animal, p.Name) + (p.Slot == slot ? Loc.T("res.youTag") : ""), 22, p.Alive ? Ui.Ink : Ui.Muted, FontStyle.Bold, TextAnchor.UpperLeft);
                 string who = p.Kind == "ai" ? (string.IsNullOrEmpty(p.Level) ? Loc.T("sum.cpu") : Loc.T("sum.cpuLv", "lv", Names.Level(p.Level))) : Loc.T("sum.player");
                 string st = p.Alive ? Loc.T("sum.len", "n", LenOf(p)) : (p.Left ? Loc.T("sum.left") : Loc.T("sum.out"));
-                Ui.Label(vb, who + "・" + st, 17, Ui.Muted, FontStyle.Normal, TextAnchor.UpperLeft, false);
+                Ui.Label(vb, who + "・" + st, 17, Ui.Muted, FontStyle.Normal, TextAnchor.UpperLeft);
                 Ui.Label(hr, p.Score.ToString(), 28, Ui.Ink, FontStyle.Bold, TextAnchor.MiddleRight, false);
             }
             if (view.Players.Count > 0 && slot < 0) Ui.Pill(sumBox, Loc.T("game.spectating"), "off", 18);

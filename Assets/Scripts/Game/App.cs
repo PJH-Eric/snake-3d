@@ -34,6 +34,7 @@ namespace Snake3D
         Canvas canvas; CanvasScaler scaler;
         Camera backdrop;
         int lastW, lastH; Rect lastSafe;
+        float lastDensity;
         readonly List<Ui.ModalHandle> modals = new List<Ui.ModalHandle>();
         Text banner; RectTransform bannerBox;
         Button gearBtn, langBtn;
@@ -125,8 +126,8 @@ namespace Snake3D
             Safe = Ui.Obj("Safe", CanvasRt); Ui.Stretch(Safe);
             ScreenRoot = Ui.Obj("Screens", Safe); Ui.Stretch(ScreenRoot);
             Chrome = Ui.Obj("Chrome", Safe); Ui.Stretch(Chrome);      // 右上角按鈕與連線橫幅，永遠在畫面之上
-            Layer = Ui.Obj("Modals", CanvasRt); Ui.Stretch(Layer);
-            ToastLayer = Ui.Obj("Toasts", CanvasRt); Ui.Stretch(ToastLayer);
+            Layer = Ui.Obj("Modals", Safe); Ui.Stretch(Layer);
+            ToastLayer = Ui.Obj("Toasts", Safe); Ui.Stretch(ToastLayer);
 
             // 右上角：語言與設定
             var row = Ui.HBox(Chrome, 10, 0, TextAnchor.MiddleRight);
@@ -147,16 +148,22 @@ namespace Snake3D
         {
             int w = Screen.width, h = Screen.height;
             var sa = Screen.safeArea;
-            if (w == lastW && h == lastH && sa == lastSafe) return;
-            lastW = w; lastH = h; lastSafe = sa;
-            // 以 640×560 的版面為基準，窄螢幕不會變成一堆小字；寬螢幕不會把畫面撐成巨大按鈕
-            scaler.scaleFactor = Mathf.Clamp(Mathf.Min(w / 640f, h / 560f), 0.6f, 2.2f);
+            float density = Platform.PixelScale;
+            if (w == lastW && h == lastH && sa == lastSafe && density == lastDensity) return;
+            bool wasWide = lastSafe.width / Mathf.Max(0.1f, UiScale) >= 900;
+            bool wasLandscape = lastW > lastH;
+            lastW = w; lastH = h; lastSafe = sa; lastDensity = density;
+            // CSS 尺寸決定斷點；畫布像素倍率只處理高 DPI，不縮小手機的控制項。
+            scaler.scaleFactor = Lay.Scale(sa.width, sa.height, density);
             if (w > 0 && h > 0)
             {
                 Safe.anchorMin = new Vector2(sa.xMin / w, sa.yMin / h);
                 Safe.anchorMax = new Vector2(sa.xMax / w, sa.yMax / h);
                 Safe.offsetMin = Vector2.zero; Safe.offsetMax = Vector2.zero;
             }
+            bannerBox.sizeDelta = new Vector2(Mathf.Min(560, Lay.LogicalW - 24), 46);
+            if (Current != null && !(Current is GamePage) && (wasWide != Lay.Wide || wasLandscape != (w > h)))
+                Rebuild();
         }
 
         public float UiScale { get { return scaler != null ? scaler.scaleFactor : 1f; } }
@@ -197,6 +204,7 @@ namespace Snake3D
         // ---------- 畫面切換 ----------
         public void Go(Page p)
         {
+            CloseAllModals();
             if (Current != null)
             {
                 Current.Close();
@@ -208,8 +216,8 @@ namespace Snake3D
             p.Build(p.Root);
             bool game = p is GamePage;
             Sound.Music(game ? "battle" : "menu");
-            // 遊戲中右上角的按鈕讓位給遊戲自己的版面，其他畫面一律顯示
-            SetChromeButtons(!game);
+            // 所有畫面都保留緊鄰的語言與設定入口。
+            SetChromeButtons();
             if (!(Online != null && Online.NeedsNet(p))) { if (Net.I != null) Net.CloseConn(); }
             RefreshBanner();
         }
@@ -218,15 +226,24 @@ namespace Snake3D
         {
             if (Current == null) return;
             var p = Current;
-            for (int i = p.Root.childCount - 1; i >= 0; i--) Destroy(p.Root.GetChild(i).gameObject);
+            var oldScroll = p.Root.GetComponentInChildren<ScrollRect>();
+            float position = oldScroll != null ? oldScroll.verticalNormalizedPosition : 1f;
+            for (int i = p.Root.childCount - 1; i >= 0; i--)
+            {
+                var child = p.Root.GetChild(i).gameObject;
+                child.SetActive(false);
+                Destroy(child);
+            }
             p.Build(p.Root);
+            Canvas.ForceUpdateCanvases();
+            var newScroll = p.Root.GetComponentInChildren<ScrollRect>();
+            if (newScroll != null) newScroll.verticalNormalizedPosition = position;
         }
 
-        void SetChromeButtons(bool on)
+        void SetChromeButtons()
         {
             gearBtn.transform.parent.gameObject.SetActive(true);
-            // 遊戲畫面：設定鈕仍在，但貼近邊角、只留設定（語言切換放在設定裡）
-            langBtn.gameObject.SetActive(on);
+            langBtn.gameObject.SetActive(true);
         }
 
         void OnLang()
@@ -276,7 +293,7 @@ namespace Snake3D
         public void Toast(string text, float seconds = 2.6f)
         {
             var rt = Ui.Obj("Toast", ToastLayer);
-            Ui.Anchor(rt, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 90), new Vector2(560, 20));
+            Ui.Anchor(rt, new Vector2(0.5f, 0), new Vector2(0.5f, 0), new Vector2(0, 90), new Vector2(Mathf.Min(560, Lay.LogicalW - 24), 20));
             var img = rt.gameObject.AddComponent<Image>(); img.sprite = Ui.Round(Data.Hex("#4a3320"), Data.Hex("#4a3320"), 16, 0); img.type = Image.Type.Sliced; img.raycastTarget = false;
             var g = rt.gameObject.AddComponent<VerticalLayoutGroup>(); g.padding = new RectOffset(18, 18, 12, 12); g.childControlWidth = true; g.childControlHeight = true;
             var f = rt.gameObject.AddComponent<ContentSizeFitter>(); f.verticalFit = ContentSizeFitter.FitMode.PreferredSize;

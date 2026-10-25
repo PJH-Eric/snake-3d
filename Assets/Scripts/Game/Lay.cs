@@ -8,10 +8,16 @@ namespace Snake3D
     /// <summary>選單畫面共用的版面小工具：置中的限寬欄、頂端列、雙欄／單欄、固定底部按鈕列、鍵帽、規則面板、角色編輯。</summary>
     public static class Lay
     {
-        public static float LogicalW { get { return Screen.width / Mathf.Max(0.1f, App.I.UiScale); } }
-        public static float LogicalH { get { return Screen.height / Mathf.Max(0.1f, App.I.UiScale); } }
+        public static float LogicalW { get { return Screen.safeArea.width / Mathf.Max(0.1f, App.I.UiScale); } }
+        public static float LogicalH { get { return Screen.safeArea.height / Mathf.Max(0.1f, App.I.UiScale); } }
         /// <summary>寬螢幕（桌機、平板橫向）用雙欄，窄螢幕（手機、平板直向）堆疊成單欄。</summary>
         public static bool Wide { get { return LogicalW >= 900f; } }
+
+        public static float Scale(float width, float height, float pixelScale)
+        {
+            float density = Mathf.Max(0.1f, pixelScale);
+            return density * Mathf.Clamp(Mathf.Min(width / density / 900f, height / density / 720f), 1f, 1.6f);
+        }
 
         public sealed class Parts { public ScrollBox Scroll; public RectTransform Col; public RectTransform Cta; }
 
@@ -19,7 +25,8 @@ namespace Snake3D
         public static Parts Page(RectTransform root, float maxW, float ctaH = 0)
         {
             var sc = Ui.Scroll(root, 0, 0);
-            Ui.Stretch(sc.Root, 0, 0, 0, ctaH);
+            bool online = App.I.Current is LobbyPage || App.I.Current is RoomPage;
+            Ui.Stretch(sc.Root, 0, online ? 134 : 78, 0, ctaH);
             var row = Ui.HBox(sc.Content, 0, 0, TextAnchor.UpperCenter);
             var col = Ui.VBox(row, 14, 16);
             Ui.Size(col, minW: 0, prefW: maxW, flexW: 0);
@@ -44,15 +51,14 @@ namespace Snake3D
             return b;
         }
 
-        /// <summary>頂端列：返回鈕＋標題，右邊留出設定／語言鈕的位置。</summary>
-        public static Text TopBar(RectTransform col, string title, Action back, bool reserveRight = true)
+        /// <summary>全域工具列下方的頁面標題；窄版允許換行。</summary>
+        public static Text TopBar(RectTransform col, string title, Action back)
         {
             var row = Ui.HBox(col, 10, 0, TextAnchor.MiddleLeft);
             Ui.Size(row, minH: 60);
             if (back != null) Ui.IconBtn(row, "back", () => { Sound.Sfx("click"); back(); }, Loc.T("common.back"), 56);
-            var t = Ui.Label(row, title, 34, Ui.Ink, FontStyle.Bold, TextAnchor.MiddleLeft, false);
+            var t = Ui.Label(row, title, 34, Ui.Ink, FontStyle.Bold, TextAnchor.MiddleLeft);
             Ui.Size(t.rectTransform, flexW: 1, minW: 0);
-            if (reserveRight) { var sp = Ui.Obj("Reserve", row); Ui.Size(sp, minW: 130, prefW: 130); }
             return t;
         }
 

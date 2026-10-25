@@ -275,6 +275,7 @@ namespace UnityEngine
         public static double realtimeSinceStartupAsDouble;
     }
     public static class Screen { public static int width, height; public static Rect safeArea; }
+    public static class WebGLInput { public static bool mobileKeyboardSupport; }
     public static class Application
     {
         public static int targetFrameRate; public static bool isMobilePlatform, isEditor; public static SystemLanguage systemLanguage;

@@ -12,15 +12,14 @@ namespace Snake3D
         {
             var p = Lay.Page(root, 640);
             var col = p.Col;
-            Ui.Spacer(col, 40);
 
             // 標題：每個字不同顏色
-            var title = Ui.HBox(col, 2, 0, TextAnchor.MiddleCenter);
+            var title = Ui.Wrap(col, 2, TextAnchor.UpperCenter, true);
             string[] pal = { "#ff7a45", "#3fa7f5", "#ff6f9f", "#4cc26a", "#a58bff", "#ffc233", "#2ec7c0" };
             int ci = 0;
             foreach (char c in Loc.T("app.title"))
             {
-                var t = Ui.Label(title, c.ToString(), 78, Data.Hex(pal[ci++ % pal.Length]), FontStyle.Bold, TextAnchor.MiddleCenter, false);
+                var t = Ui.Label(title, c.ToString(), Loc.Lang == Loc.EN ? 44 : 60, Data.Hex(pal[ci++ % pal.Length]), FontStyle.Bold, TextAnchor.MiddleCenter, false);
                 var o = t.gameObject.AddComponent<Outline>(); o.effectColor = Ui.Ink; o.effectDistance = new Vector2(3, -3);
             }
             var sub = Ui.Label(col, Loc.T("home.sub"), 26, Ui.Ink, FontStyle.Bold, TextAnchor.UpperCenter);

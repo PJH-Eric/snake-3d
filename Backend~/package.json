@@ -9,7 +9,7 @@
   },
   "scripts": {
     "start": "node server.js",
-    "test": "node tests/verify.js && node tests/rooms.js && node scripts/online-check.js"
+    "test": "node tests/verify.js && node tests/rooms.js && node scripts/online-check.js && node tests/web-bridge.js"
   },
   "dependencies": {}
 }

@@ -61,7 +61,17 @@ static class Program
         Rules.Step(state, Rules.DT);
         Check(!state.Players[0].Boosting, "恢復後規則不得繼續加速");
         game.ResetInput();
+        foreach (var size in new[] { (320f, 568f), (390f, 844f), (844f, 390f), (768f, 1024f), (1024f, 768f), (1440f, 900f) })
+        {
+            float scale = Lay.Scale(size.Item1, size.Item2, 1);
+            float retina = Lay.Scale(size.Item1 * 2, size.Item2 * 2, 2);
+            Check(Math.Abs(retina - scale * 2) < 0.001f, "相同 CSS 視窗在高 DPI 必須使用相同邏輯版面");
+            Check(56 * scale >= 44, "主要觸控控制不可因窄螢幕縮小至 44 CSS px 以下");
+            bool wide = size.Item1 / scale >= 900;
+            Check(wide == (size.Item1 >= 1024), "手機、平板與桌機斷點錯誤");
+        }
         Console.WriteLine("通過：多指持有、放開、移出、冪等重置、暫停輸入清理與恢復加速狀態（純 C#，未執行 Unity UI）");
+        Console.WriteLine("通過：6 種 CSS 視窗與 1x/2x DPI 的縮放及斷點計算（未渲染畫面）");
         return 0;
     }
 }

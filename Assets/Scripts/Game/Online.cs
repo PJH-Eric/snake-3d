@@ -234,9 +234,8 @@ namespace Snake3D
             var bar = Ui.HBox(col, 10, 0, TextAnchor.MiddleLeft);
             Ui.Size(bar, minH: 60);
             Ui.IconBtn(bar, "back", () => { Sound.Sfx("click"); App.I.Go(new HomePage()); }, Loc.T("common.back"), 56);
-            var tt = Ui.Label(bar, Loc.T("lobby.title"), 34, Ui.Ink, FontStyle.Bold, TextAnchor.MiddleLeft, false); Ui.Size(tt.rectTransform, flexW: 1, minW: 0);
-            statusBox = Ui.HBox(bar, 6, 0, TextAnchor.MiddleRight);
-            var rs = Ui.Obj("Reserve", bar); Ui.Size(rs, minW: 130, prefW: 130);
+            var tt = Ui.Label(bar, Loc.T("lobby.title"), 34, Ui.Ink, FontStyle.Bold, TextAnchor.MiddleLeft); Ui.Size(tt.rectTransform, flexW: 1, minW: 0);
+            statusBox = Ui.HBox(col, 6, 0, TextAnchor.MiddleLeft);
 
             if (Cfg.Status != "ok")
             {
@@ -427,14 +426,16 @@ namespace Snake3D
         {
             var on = App.I.Online;
             on.RoomUi = this; on.InGame = false; on.Game = null;
+            // 語系／方向重排沿用同一個 Page，先解除上一份畫面的訂閱。
+            if (push != null) on.ChatPushed -= push;
+            if (reset != null) on.ChatReset -= reset;
             var p = Lay.Page(root, 1000);
             var col = p.Col;
             var bar = Ui.HBox(col, 10, 0, TextAnchor.MiddleLeft);
             Ui.Size(bar, minH: 60);
             Ui.IconBtn(bar, "back", () => { Sound.Sfx("click"); on.ConfirmLeave(); }, Loc.T("room.leave"), 56);
-            titleT = Ui.Label(bar, Loc.T("room.title"), 34, Ui.Ink, FontStyle.Bold, TextAnchor.MiddleLeft, false); Ui.Size(titleT.rectTransform, flexW: 1, minW: 0);
-            codeBox = Ui.HBox(bar, 6, 0, TextAnchor.MiddleRight);
-            var rs = Ui.Obj("Reserve", bar); Ui.Size(rs, minW: 130, prefW: 130);
+            titleT = Ui.Label(bar, Loc.T("room.title"), 34, Ui.Ink, FontStyle.Bold, TextAnchor.MiddleLeft); Ui.Size(titleT.rectTransform, flexW: 1, minW: 0);
+            codeBox = Ui.HBox(col, 6, 0, TextAnchor.MiddleLeft);
 
             RectTransform a, b;
             Lay.Cols(col, out a, out b);

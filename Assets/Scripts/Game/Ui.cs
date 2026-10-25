@@ -479,6 +479,7 @@ namespace Snake3D
             sr.scrollSensitivity = 40; sr.inertia = true; sr.decelerationRate = 0.12f;
             var view = Obj("Viewport", root);
             Stretch(view, 0, 0, 14, 0);
+            var hit = view.gameObject.AddComponent<Image>(); hit.color = Color.clear;
             view.gameObject.AddComponent<RectMask2D>();
             var content = Obj("Content", view);
             content.anchorMin = new Vector2(0, 1); content.anchorMax = new Vector2(1, 1); content.pivot = new Vector2(0.5f, 1);
