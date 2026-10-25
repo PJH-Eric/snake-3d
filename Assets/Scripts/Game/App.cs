@@ -35,6 +35,7 @@ namespace Snake3D
         Camera backdrop;
         int lastW, lastH; Rect lastSafe;
         float lastDensity;
+        bool pageReflowPending;
         readonly List<Ui.ModalHandle> modals = new List<Ui.ModalHandle>();
         Text banner; RectTransform bannerBox;
         Button gearBtn, langBtn;
@@ -164,7 +165,7 @@ namespace Snake3D
             }
             bannerBox.sizeDelta = new Vector2(Mathf.Min(560, Lay.LogicalW - 24), 46);
             if (Current != null && !(Current is GamePage) && (wasWide != Lay.Wide || wasLandscape != (w > h)))
-                Rebuild();
+                pageReflowPending = true;
         }
 
         public float UiScale { get { return scaler != null ? scaler.scaleFactor : 1f; } }
@@ -173,11 +174,21 @@ namespace Snake3D
         void Update()
         {
             ApplyScale();
+            // 軟鍵盤可能改變 viewport／方向；不要在組字時銷毀正在輸入的欄位。
+            if (pageReflowPending && !TextInputFocused()) Rebuild();
             if (Input.GetKeyDown(KeyCode.Escape)) HandleBack();
             if (Current != null) Current.Tick();
             if (modals.Count > 0) PruneModals();
             bool game = Current is GamePage;
             if (EventSystem.current != null) EventSystem.current.sendNavigationEvents = !game || ModalOpen;
+        }
+
+        static bool TextInputFocused()
+        {
+            var es = EventSystem.current;
+            if (es == null || es.currentSelectedGameObject == null) return false;
+            var input = es.currentSelectedGameObject.GetComponent<InputField>();
+            return input != null && input.isFocused;
         }
 
         bool clearSel;
@@ -205,6 +216,7 @@ namespace Snake3D
         // ---------- 畫面切換 ----------
         public void Go(Page p)
         {
+            pageReflowPending = false;
             CloseAllModals();
             if (Current != null)
             {
@@ -225,6 +237,7 @@ namespace Snake3D
 
         public void Rebuild()
         {
+            pageReflowPending = false;
             if (Current == null) return;
             var p = Current;
             var oldScroll = p.Root.GetComponentInChildren<ScrollRect>();
