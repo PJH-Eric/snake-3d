@@ -25,6 +25,25 @@ static class NetTests
 
     public static void Run()
     {
+        var outage = new ConnectionOutageWindow();
+        Check(!outage.ShouldShow(100), "單機／首頁不應出現線上提示");
+        outage.Observe("connecting", 100);
+        Check(!outage.ShouldShow(129.99), "30 秒前應繼續等待連線");
+        outage.Observe("waking", 120);
+        Check(outage.ShouldShow(130), "喚醒及重試不應重設 30 秒期限");
+        Check(!outage.ShouldShow(200), "同一次故障不重複彈窗");
+        outage.Observe("open", 201);
+        Check(!outage.Active && !outage.ShouldShow(300), "恢復後清除提示");
+        outage.Observe("connecting", 400);
+        outage.Observe("idle", 410);
+        Check(!outage.ShouldShow(500), "離開線上後取消提示");
+        outage.Observe("connecting", 600);
+        Check(outage.ShouldShow(630), "重新進入線上可以再次顯示提示");
+        for (int month = 1; month <= 12; month++)
+            Check(ConnectionOutageWindow.ResetMonth(new DateTime(2026, month, 28), false) == (month % 12 + 1).ToString(), "次月計算及跨年");
+        Check(ConnectionOutageWindow.ResetMonth(new DateTime(2026, 12, 31), true) == "January", "英文跨年月份");
+        Console.WriteLine("通過：30 秒斷線提示、冷啟動、取消、恢復、去重及 12 個月份邊界");
+
         var previousNet = Net.I;
         string previousStatus = Net.Status, previousUrl = Cfg.ServerUrl;
         int previousDetail = Net.StatusDetail;

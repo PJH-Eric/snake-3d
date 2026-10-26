@@ -74,6 +74,37 @@ namespace Snake3D
         }
     }
 
+    /// <summary>只在線上連線持續 30 秒未成功時提示；恢復或離開後重設。</summary>
+    public sealed class ConnectionOutageWindow
+    {
+        double started = -1;
+        bool shown;
+        public bool Active { get { return started >= 0; } }
+
+        public void Observe(string status, double now)
+        {
+            if (status == "idle" || status == "unset" || status == "open")
+            {
+                started = -1;
+                shown = false;
+            }
+            else if (!Active && (status == "connecting" || status == "waking" || status == "retrying")) started = now;
+        }
+
+        public bool ShouldShow(double now)
+        {
+            if (!Active || shown || now - started < 30) return false;
+            shown = true;
+            return true;
+        }
+
+        public static string ResetMonth(DateTime now, bool english)
+        {
+            var next = now.AddMonths(1);
+            return english ? next.ToString("MMMM", System.Globalization.CultureInfo.InvariantCulture) : next.Month.ToString(System.Globalization.CultureInfo.InvariantCulture);
+        }
+    }
+
     /// <summary>連線層（對應網頁版 net.js）：先打 /health 喚醒冷啟動的伺服器，再連 WebSocket，斷線自動重連。</summary>
     public sealed class Net : MonoBehaviour
     {
@@ -85,6 +116,8 @@ namespace Snake3D
         SnakeSocket sock;
         bool wantOpen; int retry; float retryAt = -1; int session;
         string helloName = "", helloAnimal = "cat";
+        readonly ConnectionOutageWindow outage = new ConnectionOutageWindow();
+        Ui.ModalHandle outageModal;
         readonly Dictionary<string, List<Action<object>>> handlers = new Dictionary<string, List<Action<object>>>();
 
         public static bool Connected { get { return I != null && I.sock != null && I.sock.Open; } }
@@ -103,6 +136,11 @@ namespace Snake3D
         static void SetStatus(string s, int detail = 0)
         {
             Status = s; StatusDetail = detail;
+            if (I != null)
+            {
+                I.outage.Observe(s, Time.realtimeSinceStartup);
+                if (!I.outage.Active && I.outageModal != null) { I.outageModal.Close(); I.outageModal = null; }
+            }
             if (StatusChanged != null) StatusChanged(s, detail);
         }
 
@@ -173,6 +211,13 @@ namespace Snake3D
 
         void Update()
         {
+            if (App.I != null && outage.ShouldShow(Time.realtimeSinceStartup))
+            {
+                var modal = App.I.Modal(Loc.T("net.outage.title"), true, 560);
+                outageModal = modal;
+                Ui.Label(modal.Body, Loc.T("net.outage.message", "month", ConnectionOutageWindow.ResetMonth(DateTime.Now, Loc.Lang == Loc.EN)), 24, Ui.Ink);
+                Ui.Btn(modal.Body, Loc.T("common.ok"), () => modal.Close(), "primary", 160, 56, 22);
+            }
             if (retryAt > 0 && Time.realtimeSinceStartup >= retryAt) { retryAt = -1; if (wantOpen && sock == null) OpenConn(null, null); }
             if (sock == null) return;
             var me = sock;

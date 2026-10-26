@@ -5,6 +5,8 @@ namespace Snake3D
     {
         public static readonly string[] Zh =
         {
+            "net.outage.title", "線上暫時無法連線",
+            "net.outage.message", "免費伺服器額度將於 {month} 月 1 日重置，期間可繼續遊玩單機版。",
             "common.close", "關閉",
             "common.cancel", "取消",
             "common.ok", "確定",
@@ -439,6 +441,8 @@ namespace Snake3D
         };
         public static readonly string[] En =
         {
+            "net.outage.title", "Online unavailable",
+            "net.outage.message", "Free server quota resets on {month} 1. You can keep playing offline.",
             "common.close", "Close",
             "common.cancel", "Cancel",
             "common.ok", "OK",
