@@ -224,6 +224,7 @@ namespace Snake3D
                 if (Current.Root != null) Destroy(Current.Root.gameObject);
             }
             Current = p;
+            Net.SetOutageScreen(p is LobbyPage || p is RoomPage);
             p.Root = Ui.Obj("Page:" + p.GetType().Name, ScreenRoot);
             Ui.Stretch(p.Root);
             p.Build(p.Root);

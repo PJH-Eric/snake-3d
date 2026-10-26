@@ -27,6 +27,10 @@ static class NetTests
     {
         var outage = new ConnectionOutageWindow();
         Check(!outage.ShouldShow(100), "單機／首頁不應出現線上提示");
+        outage.Observe("connecting", 0);
+        Check(!outage.ShouldShow(100), "不在大廳／房間時，連線狀態不啟動提示");
+        outage.Observe("idle", 100);
+        outage.SetScreen(true, 100);
         outage.Observe("connecting", 100);
         Check(!outage.ShouldShow(129.99), "30 秒前應繼續等待連線");
         outage.Observe("waking", 120);
@@ -39,6 +43,16 @@ static class NetTests
         Check(!outage.ShouldShow(500), "離開線上後取消提示");
         outage.Observe("connecting", 600);
         Check(outage.ShouldShow(630), "重新進入線上可以再次顯示提示");
+        outage.SetScreen(false, 631);
+        Check(!outage.Active && !outage.ShouldShow(700), "進入遊戲時取消已有提示");
+        outage.Observe("retrying", 710);
+        Check(!outage.ShouldShow(800), "遊戲中斷線重連不得彈窗");
+        outage.SetScreen(true, 900);
+        Check(!outage.ShouldShow(929.99) && outage.ShouldShow(930), "返回房間後重新等待 30 秒");
+        outage.Observe("open", 940);
+        outage.Observe("connecting", 1000);
+        outage.SetScreen(false, 1020);
+        Check(!outage.ShouldShow(1100), "進入遊戲也必須取消尚未滿 30 秒的提示");
         for (int month = 1; month <= 12; month++)
             Check(ConnectionOutageWindow.ResetMonth(new DateTime(2026, month, 28), false) == (month % 12 + 1).ToString(), "次月計算及跨年");
         Check(ConnectionOutageWindow.ResetMonth(new DateTime(2026, 12, 31), true) == "January", "英文跨年月份");

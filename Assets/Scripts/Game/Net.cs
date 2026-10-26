@@ -79,21 +79,33 @@ namespace Snake3D
     {
         double started = -1;
         bool shown;
+        bool eligible;
+        string connectionStatus = "idle";
         public bool Active { get { return started >= 0; } }
+
+        public void SetScreen(bool waitingRoom, double now)
+        {
+            if (eligible == waitingRoom) return;
+            eligible = waitingRoom;
+            started = -1;
+            shown = false;
+            if (eligible) Observe(connectionStatus, now);
+        }
 
         public void Observe(string status, double now)
         {
-            if (status == "idle" || status == "unset" || status == "open")
+            connectionStatus = status;
+            if (!eligible || status == "idle" || status == "unset" || status == "open")
             {
                 started = -1;
                 shown = false;
             }
-            else if (!Active && (status == "connecting" || status == "waking" || status == "retrying")) started = now;
+            else if (!Active && (status == "connecting" || status == "waking" || status == "retrying" || status == "offline")) started = now;
         }
 
         public bool ShouldShow(double now)
         {
-            if (!Active || shown || now - started < 30) return false;
+            if (!eligible || !Active || shown || now - started < 30) return false;
             shown = true;
             return true;
         }
@@ -142,6 +154,13 @@ namespace Snake3D
                 if (!I.outage.Active && I.outageModal != null) { I.outageModal.Close(); I.outageModal = null; }
             }
             if (StatusChanged != null) StatusChanged(s, detail);
+        }
+
+        public static void SetOutageScreen(bool waitingRoom)
+        {
+            if (I == null) return;
+            I.outage.SetScreen(waitingRoom, Time.realtimeSinceStartup);
+            if (!waitingRoom && I.outageModal != null) { I.outageModal.Close(); I.outageModal = null; }
         }
 
         public static void OpenConn(string name, string animal)
