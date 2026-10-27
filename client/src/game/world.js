@@ -11,12 +11,28 @@ const FOOD_CAP = 300;
 const PUFF_CAP = 320;
 const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3(), tmpE = new THREE.Euler(), tmpC = new THREE.Color();
 const ZERO_Q = new THREE.Quaternion();
-/* 場地道具的外型種類（純視覺；碰撞與果實規則由 shared/rules.js 決定） */
-const ROCK_KINDS = ['rock', 'mushroom', 'stump', 'crystal'];
-const GEM_COLORS = ['#7fdcec', '#ff9ec7', '#c9a7ff'];
-const FLOWER_COLORS = ['#ff9ec7', '#ffe27a', '#ffffff', '#c9a7ff', '#ffb259'];
-/* 果實：0 蘋果（圓）、1 梨子（高）、2 蜜桃（扁）；[寬, 高] */
-const FRUIT_SHAPE = [[0.84, 0.78], [0.7, 1.0], [0.95, 0.74]];
+/* 場地道具（純視覺；碰撞與果實規則由 shared/rules.js 決定）：石頭會擋路，草叢與小花可以直接穿過 */
+/* 每個舞台主題（順序同 data.js 的 THEMES）各有草叢配色與地面小物：花、糖粒、貝殼、冰晶、螢火蟲、落葉 */
+const STAGE_PROPS = [
+  { bush: ['#4cc26a', '#3fae5c', '#6fd37a'], decal: ['#ff9ec7', '#ffe27a', '#ffffff', '#c9a7ff', '#ffb259'], n: 34, glow: false },
+  { bush: ['#ff9ec7', '#ffc2dc', '#d9a7ff'], decal: ['#ff6f9f', '#ffd23d', '#7fdcec', '#ffffff', '#a58bff'], n: 46, glow: false },
+  { bush: ['#2fa89a', '#4cc2a6', '#7fd6b0'], decal: ['#fff3dc', '#ffc2b3', '#ffffff', '#f6d58a'], n: 30, glow: false },
+  { bush: ['#e9f4f7', '#cfe6ee', '#a8d3c0'], decal: ['#ffffff', '#cdeefa', '#e9f7ff'], n: 40, glow: false },
+  { bush: ['#2e6b6f', '#3b7f78', '#2a5a66'], decal: ['#ffe27a', '#9ef5c8', '#c9a7ff'], n: 36, glow: true },
+  { bush: ['#7bb85b', '#5fa84c', '#9bd073'], decal: ['#e6d27a', '#c9b86a', '#fff0a8', '#a6d985'], n: 34, glow: false }
+];
+/* 背景飄浮物（順序同舞台主題）：花瓣、糖粒、泡泡、雪花、螢火蟲、落葉；vy 為垂直速度（負＝下落）、sway 為左右飄動幅度 */
+const AMBIENT = [
+  { color: ['#ffd1e8', '#fff0a8', '#ffffff'], size: 0.17, vy: -0.45, sway: 0.9, n: 36 },
+  { color: ['#ff6f9f', '#ffd23d', '#7fdcec', '#a58bff'], size: 0.15, vy: 0.3, sway: 0.7, n: 44 },
+  { color: ['#e8fbff', '#bff0ff'], size: 0.22, vy: 0.55, sway: 0.5, n: 30 },
+  { color: ['#ffffff', '#e6f6ff'], size: 0.14, vy: -0.9, sway: 0.6, n: 70 },
+  { color: ['#fff39a', '#b9ffd9'], size: 0.13, vy: 0, sway: 1.6, n: 34, firefly: true },
+  { color: ['#cfe79a', '#e6d27a', '#9bd073'], size: 0.18, vy: -0.5, sway: 1.1, n: 34 }
+];
+const AMBIENT_TOP = 8;
+/* 果實外型 [寬, 高]，順序同 FRUIT_BODY：蘋果、橘子、梨子、蜜桃、檸檬、李子、櫻桃、藍莓 */
+const FRUIT_SHAPE = [[0.84, 0.78], [0.82, 0.74], [0.7, 1.0], [0.95, 0.74], [0.68, 0.92], [0.74, 0.7], [0.54, 0.54], [0.58, 0.58]];
 const lerp = (a, b, t) => a + (b - a) * t;
 
 function starGeometry() {
@@ -94,6 +110,7 @@ export class World3D {
     this.buildStage(view);
     this.buildFoods();
     this.buildPuffs();
+    this.buildAmbient(view);
     for (const p of view.players) this.ensureSnake(p, opts.selfSlot);
   }
 
@@ -177,24 +194,49 @@ export class World3D {
       rail.position.y = y; scene.add(rail);
     }
 
-    /* 障礙物：依位置決定外型（石頭、香菇、樹墩、水晶），碰撞範圍都是同一個圓 */
-    view.rocks.forEach((k, i) => {
+    /* 石頭：唯一會擋路的障礙物 */
+    for (const k of view.rocks) {
       const grp = new THREE.Group();
       grp.position.set(k[0], 0, k[1]);
-      this.buildProp(grp, ROCK_KINDS[(Math.abs(Math.round(k[0] * 7 + k[1] * 13)) + i) % ROCK_KINDS.length], k[2] * 2, k, th);
+      this.buildRock(grp, k[2] * 2, k, th);
       scene.add(grp);
-    });
+    }
+
+    const stage = STAGE_PROPS[((view.themeId % STAGE_PROPS.length) + STAGE_PROPS.length) % STAGE_PROPS.length];
+    /* 草叢：可以直接穿過去，不影響規則；位置由主題與場地大小決定，每位玩家看到的一樣，並避開石頭 */
+    {
+      let bs = (view.themeId * 7919 + Math.round(r) * 131 + 17) >>> 0;
+      const br = () => { bs = (bs * 1664525 + 1013904223) >>> 0; return bs / 4294967296; };
+      const nBush = this.quality === 'low' ? 7 : Math.round(r * 0.55);
+      const blobs = this.instanced(g.sphere, this.own(new THREE.MeshLambertMaterial({ color: 0xffffff })), nBush * 3, this.quality !== 'low', true);
+      let nb = 0;
+      this.bushes = { mesh: blobs, base: [] };
+      for (let i = 0, tries = 0; i < nBush && tries < nBush * 12; tries++) {
+        const a = br() * Math.PI * 2, dd = Math.sqrt(br()) * (r - 2.2), x = Math.cos(a) * dd, z = Math.sin(a) * dd, sz = 1.3 + br() * 0.9;
+        if (view.rocks.some(k => Math.hypot(k[0] - x, k[1] - z) < k[2] + sz)) continue;
+        for (let j = 0; j < 3; j++) {
+          const ja = br() * Math.PI * 2, jd = j === 0 ? 0 : sz * 0.32, d = sz * (j === 0 ? 1 : 0.72 + br() * 0.2);
+          const bx = x + Math.cos(ja) * jd, bz = z + Math.sin(ja) * jd;
+          this.bushes.base.push([bx, d * 0.3, bz, d, br() * Math.PI * 2]);
+          blobs.setMatrixAt(nb, tmpM.compose(tmpP.set(bx, d * 0.3, bz), ZERO_Q, tmpS.set(d, d * 0.62, d)));
+          blobs.setColorAt(nb, tmpC.set(stage.bush[(i + j) % stage.bush.length]));
+          nb++;
+        }
+        i++;
+      }
+      blobs.count = nb; blobs.instanceMatrix.needsUpdate = true; if (nb) blobs.instanceColor.needsUpdate = true;
+    }
 
     /* 地面小花：只是裝飾，不影響規則 */
     {
       let fs = (view.themeId * 104729 + Math.round(r) * 31) >>> 0;
       const fr = () => { fs = (fs * 1664525 + 1013904223) >>> 0; return fs / 4294967296; };
-      const nFlower = this.quality === 'low' ? 14 : 34;
-      const flowers = this.instanced(g.sphere, this.own(new THREE.MeshLambertMaterial({ color: 0xffffff })), nFlower, false, true);
+      const nFlower = this.quality === 'low' ? 14 : stage.n;
+      const flowers = this.instanced(g.sphere, this.own(stage.glow ? new THREE.MeshBasicMaterial({ color: 0xffffff }) : new THREE.MeshLambertMaterial({ color: 0xffffff })), nFlower, false, true);
       for (let i = 0; i < nFlower; i++) {
         const a = fr() * Math.PI * 2, dd = Math.sqrt(fr()) * (r - 1.2), sc = 0.2 + fr() * 0.12;
         flowers.setMatrixAt(i, tmpM.compose(tmpP.set(Math.cos(a) * dd, 0.05, Math.sin(a) * dd), ZERO_Q, tmpS.set(sc, sc * 0.5, sc)));
-        flowers.setColorAt(i, tmpC.set(FLOWER_COLORS[i % FLOWER_COLORS.length]));
+        flowers.setColorAt(i, tmpC.set(stage.decal[i % stage.decal.length]));
       }
       flowers.count = nFlower; flowers.instanceMatrix.needsUpdate = true; flowers.instanceColor.needsUpdate = true;
     }
@@ -218,27 +260,11 @@ export class World3D {
     trunks.count = nDeco; round.count = nr; pointy.count = np;
   }
 
-  /** 障礙物外型；d 是直徑（= 碰撞圓直徑），所有零件都收在這個範圍內。 */
-  buildProp(grp, kind, d, k, th) {
-    const g = this.geo, M = c => this.mat(c);
-    if (kind === 'mushroom') {
-      this.part(grp, g.cyl, M('#fff3dc'), [0, d * 0.28, 0], [d * 0.36, d * 0.56, d * 0.36]);
-      this.part(grp, g.sphere, M('#ff6b61'), [0, d * 0.6, 0], [d * 0.98, d * 0.62, d * 0.98]);
-      for (const [x, z, sc] of [[0.22, 0.12, 0.17], [-0.2, 0.2, 0.14], [0.02, -0.28, 0.15], [-0.26, -0.1, 0.11]]) this.part(grp, g.sphere, M('#ffffff'), [x * d, d * 0.8, z * d], [sc * d, sc * d * 0.5, sc * d], null, false);
-    } else if (kind === 'stump') {
-      this.part(grp, g.cyl, M('#9a6a3a'), [0, d * 0.26, 0], [d * 0.82, d * 0.52, d * 0.82]);
-      this.part(grp, g.cyl, M('#e6bd86'), [0, d * 0.535, 0], [d * 0.7, d * 0.04, d * 0.7], null, false);
-      this.part(grp, g.cyl, M('#b98650'), [0, d * 0.56, 0], [d * 0.36, d * 0.03, d * 0.36], null, false);
-    } else if (kind === 'crystal') {
-      const gem = GEM_COLORS[Math.abs(Math.round(k[0] * 3 + k[1] * 5)) % GEM_COLORS.length];
-      this.part(grp, g.cone, this.mat(gem, 0.35), [0, d * 0.5, 0], [d * 0.42, d * 1.0, d * 0.42], [0, 15, 0]);
-      this.part(grp, g.cone, this.mat(gem, 0.35), [d * 0.26, d * 0.3, d * 0.08], [d * 0.3, d * 0.6, d * 0.3], [0, 0, -18]);
-      this.part(grp, g.cone, this.mat(gem, 0.35), [-d * 0.24, d * 0.25, -d * 0.1], [d * 0.28, d * 0.5, d * 0.28], [0, 0, 20]);
-      this.part(grp, g.sphere, M(th.rock1), [0, d * 0.08, 0], [d * 0.9, d * 0.2, d * 0.9]);
-    } else {
-      this.part(grp, g.sphere, M(th.rock0), [0, d * 0.32, 0], [d, d * 0.72, d], [0, k[0] * 40, 0]);
-      this.part(grp, g.sphere, M(th.rock1), [d * 0.22, d * 0.2, d * 0.18], [d * 0.55, d * 0.4, d * 0.5]);
-    }
+  /** 石頭外型；d 是直徑（= 碰撞圓直徑）。 */
+  buildRock(grp, d, k, th) {
+    const g = this.geo;
+    this.part(grp, g.sphere, this.mat(th.rock0), [0, d * 0.32, 0], [d, d * 0.72, d], [0, k[0] * 40, 0]);
+    this.part(grp, g.sphere, this.mat(th.rock1), [d * 0.22, d * 0.2, d * 0.18], [d * 0.55, d * 0.4, d * 0.5]);
   }
 
   buildFoods() {
@@ -248,6 +274,59 @@ export class World3D {
     this.stars = this.instanced(g.star, this.mat('#ffd23d', 0.5), 12, true);
     this.orbs = this.instanced(g.sphere, this.own(new THREE.MeshBasicMaterial({ color: 0xffffff })), FOOD_CAP, false, true);
   }
+  /** 背景飄浮物：依舞台主題的小粒子（雪、泡泡、螢火蟲…）。省電畫質不建立。 */
+  buildAmbient(view) {
+    this.amb = null;
+    if (this.quality === 'low') return;
+    const cfg = AMBIENT[((view.themeId % AMBIENT.length) + AMBIENT.length) % AMBIENT.length];
+    let sd = (view.themeId * 2654435761 + Math.round(this.R) * 97) >>> 0;
+    const rnd = () => { sd = (sd * 1664525 + 1013904223) >>> 0; return sd / 4294967296; };
+    const n = this.quality === 'high' ? cfg.n : Math.round(cfg.n * 0.7);
+    const mesh = this.instanced(this.geo.sphere, this.own(new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.85 })), n, false, true);
+    const parts = [];
+    for (let i = 0; i < n; i++) {
+      const a = rnd() * Math.PI * 2, d = Math.sqrt(rnd()) * (this.R + 4);
+      parts.push({ x: Math.cos(a) * d, y: cfg.firefly ? 0.7 + rnd() * 2.6 : rnd() * AMBIENT_TOP, z: Math.sin(a) * d, ph: rnd() * Math.PI * 2, f: 0.5 + rnd() * 0.8, s: cfg.size * (0.7 + rnd() * 0.7) });
+      mesh.setColorAt(i, tmpC.set(cfg.color[i % cfg.color.length]));
+    }
+    mesh.count = n; mesh.instanceColor.needsUpdate = true; mesh.renderOrder = 2;
+    this.amb = { mesh, parts, cfg };
+  }
+
+  /** 每幀：背景飄浮物移動、草叢輕搖；「減少動態」開啟時全部靜止並隱藏飄浮物 */
+  animateStage(dt) {
+    const calm = document.documentElement.classList.contains('reduce-motion');
+    const t = this.clock;
+    if (this.amb) {
+      const { mesh, parts, cfg } = this.amb;
+      mesh.visible = !calm;
+      if (!calm) {
+        for (let i = 0; i < parts.length; i++) {
+          const p = parts[i];
+          if (cfg.firefly) {
+            p.x += Math.cos(t * p.f + p.ph) * cfg.sway * dt; p.z += Math.sin(t * p.f * 0.8 + p.ph) * cfg.sway * dt;
+          } else {
+            p.y += cfg.vy * dt;
+            if (p.y < 0) p.y += AMBIENT_TOP; else if (p.y > AMBIENT_TOP) p.y -= AMBIENT_TOP;
+            p.x += Math.sin(t * p.f + p.ph) * cfg.sway * dt; p.z += Math.cos(t * p.f * 0.7 + p.ph) * cfg.sway * 0.5 * dt;
+          }
+          const y = cfg.firefly ? p.y + Math.sin(t * 1.3 + p.ph) * 0.35 : p.y;
+          const s = cfg.firefly ? p.s * (0.35 + 0.65 * Math.max(0, Math.sin(t * 2.2 + p.ph))) : p.s;
+          mesh.setMatrixAt(i, tmpM.compose(tmpP.set(p.x, y, p.z), ZERO_Q, tmpS.set(s, s, s)));
+        }
+        mesh.instanceMatrix.needsUpdate = true;
+      }
+    }
+    if (this.bushes && !calm) {
+      const { mesh, base } = this.bushes;
+      for (let i = 0; i < base.length; i++) {
+        const b = base[i], k = Math.sin(t * 1.5 + b[4]);
+        mesh.setMatrixAt(i, tmpM.compose(tmpP.set(b[0] + k * 0.025, b[1], b[2]), ZERO_Q, tmpS.set(b[3] * (1 + 0.035 * k), b[3] * 0.62 * (1 - 0.05 * k), b[3] * (1 + 0.035 * k))));
+      }
+      mesh.instanceMatrix.needsUpdate = true;
+    }
+  }
+
   buildPuffs() {
     this.puffMesh = this.instanced(this.geo.sphere, this.own(new THREE.MeshBasicMaterial({ color: 0xffffff })), PUFF_CAP, false, true);
   }
@@ -375,7 +454,7 @@ export class World3D {
     for (const f of view.foods) {
       const bob = Math.sin(clock * 3 + f.id * 1.7) * 0.07;
       if (f.type === 0 && na < FOOD_CAP) {
-        const vi = Math.min(2, Math.max(0, f.v)), sh = FRUIT_SHAPE[vi];
+        const vi = ((f.v % FRUIT_BODY.length) + FRUIT_BODY.length) % FRUIT_BODY.length, sh = FRUIT_SHAPE[vi];
         this.apples.setMatrixAt(na, tmpM.compose(tmpP.set(f.x, sh[1] * 0.5 + bob, f.z), ZERO_Q, tmpS.set(sh[0], sh[1], sh[0])));
         this.apples.setColorAt(na, tmpC.set(FRUIT_BODY[vi]));
         tmpQ.setFromEuler(tmpE.set(0, 0, 25 * Math.PI / 180));
@@ -431,8 +510,11 @@ export class World3D {
   consume(events, selfSlot, reduceMotion) {
     for (const e of events || []) {
       if (e.t === 'eat') {
-        const c = e.type === 0 ? FRUIT_BODY[Math.min(2, Math.max(0, e.v))] : e.type === 1 ? '#ffd23d' : slotColor(e.v);
+        const c = e.type === 0 ? FRUIT_BODY[((e.v % FRUIT_BODY.length) + FRUIT_BODY.length) % FRUIT_BODY.length] : e.type === 1 ? '#ffd23d' : slotColor(e.v);
         this.addPuff(new THREE.Vector3(e.x, 0.5, e.z), c, 0.28, reduceMotion ? 3 : 8, 0.55);
+        if (e.type === 1 && !reduceMotion) { this.addPuff(new THREE.Vector3(e.x, 0.9, e.z), '#fff3a0', 0.2, 14, 1.0); this.addPuff(new THREE.Vector3(e.x, 0.6, e.z), '#ffffff', 0.14, 10, 1.5); }
+      } else if (e.t === 'bump') {
+        this.addPuff(new THREE.Vector3(e.x, 0.45, e.z), '#fff3c4', 0.2, reduceMotion ? 2 : 7, 0.7);
       } else if (e.t === 'die') {
         this.addPuff(new THREE.Vector3(e.x, 0.8, e.z), slotColor(e.slot), 0.5, reduceMotion ? 6 : 24, 1.2);
         if (e.slot === selfSlot && !reduceMotion) this.shake = 0.6;
@@ -487,6 +569,7 @@ export class World3D {
       this.drawSnake(p, sn, a);
     }
     this.drawFoods(view);
+    this.animateStage(dt);
     this.updatePuffs(dt);
     this.renderer.render(this.scene, this.cam);
   }

@@ -417,6 +417,7 @@ export function GamePage({ params }) {
         {hud && hud.flash && hud.phase !== 'over' && <FlashCount key={hud.flash.id} flash={hud.flash} />}
         {hud && me && me.alive && !touchOn && (
           <div className="energy" role="progressbar" aria-label={t('game.energy')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(energy * 100)}>
+            <Icon name="flash" size={22} className={'energy-ico ' + (me.tired ? 'tired' : '')} />
             <div className="energy-bar"><div className={'energy-fill ' + (me.tired ? 'tired' : '')} style={{ width: energy * 100 + '%' }} /></div>
           </div>
         )}

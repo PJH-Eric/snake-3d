@@ -1,6 +1,6 @@
 # 3D貪吃蛇
 
-可愛動物園風的 3D 貪吃蛇：單人挑戰、對戰電腦（幼幼班／簡單／普通／困難）、線上多人（大廳、房間、邀請連結、觀戰、聊天）。繁體中文／English，觸控優先（手機、平板、桌機），桌機用鍵盤操作。
+可愛動物園風的 3D 貪吃蛇：單人挑戰、對戰電腦（幼幼班／簡單／普通／困難）、線上多人（大廳、房間、邀請連結、觀戰、聊天）。繁體中文／简体中文／English，觸控優先（手機、平板、桌機），桌機用鍵盤操作。
 
 - 前端：**React 18 + Three.js**（Vite 建置）→ `client/`
 - 後端：**Node.js** 權威房間伺服器（零第三方套件，自帶 WebSocket）→ `server/`
@@ -49,7 +49,7 @@ npm test                     # server：規則核心、電腦對手、房間生�
 npm run build
 npm --prefix client run preview -- --port 4173   # 另一個終端機
 npm start                                         # 另一個終端機（3130）
-SHOT_DIR=./shots SHOTS=1 npm run e2e              # 尺寸矩陣（手機／平板直橫向／桌機 × 中英文）＋線上流程，並存截圖
+SHOT_DIR=./shots SHOTS=1 npm run e2e              # 尺寸矩陣（手機／平板直橫向／桌機 × 繁中／簡中／英文）＋線上流程，並存截圖
 ```
 
 `SHOT_DIR` 與截圖都是可重建的產物，已被 `.gitignore` 忽略。
@@ -72,13 +72,25 @@ client/    React + Three.js 前端
   tests/ e2e/    vitest 單元測試、Edge 端對端
 server/    房間、邀請、觀戰、聊天、權威對局、WebSocket
 shared/    rules.js（確定性規則，固定 30 tick/s、種子亂數）、ai.js、locales.json
+scripts/   gen-hans.py（由繁體字典以 OpenCC 產生簡體字典）
 ```
 
 ## 操作與規則
 
 - 觸控：手指按在畫面任何地方拖曳（搖桿），按住「加速」鈕衝刺；設定裡可改成固定位置搖桿、換左右手。
 - 鍵盤：方向鍵／WASD（可斜走）、Space／Shift 加速；Esc 開暫停選單。
-- 吃果實變長變粗；撞到石頭、自己或別條蛇就出局，身體變成發光果實；碰到圍欄不會出局，但會扣掉加速能量。最後存活者獲勝，有時限時分數最高者獲勝。
+- 吃果實變長變粗；撞到石頭、自己或別條蛇就出局，身體變成發光果實；碰到圍欄不會出局，但會扣掉加速能量。場上只有石頭會擋路；草叢與地面小物只是裝飾，可以直接穿過。最後存活者獲勝，有時限時分數最高者獲勝。
+
+- 果實有 8 種外觀（蘋果、橘子、梨子、蜜桃、檸檬、李子、櫻桃、藍莓），分數與成長都一樣；另有金色星星（+30）與出局的蛇變成的發光果實（+5）。
+- 6 種舞台主題（動物園草地、糖果樂園、陽光沙灘、雪地森林、夜間動物園、竹林），各有不同的草叢與地面小物。
+- 加速能量條旁有閃電圖示；貼著圍欄會額外扣能量。
+- 出局或觀戰時，點資訊欄（或上方分數列）的存活玩家（含電腦）可切換觀看視角。
+
+## 語言、統計與大廳
+
+- 語言：繁體中文、简体中文、English。右上角地球鈕切換，偏好存在共用 key `game-island-lang`，網址 `?lang=` 優先。字典在 `shared/locales.json`：新增文字時先補繁體與英文，再執行 `py scripts/gen-hans.py`（需 `pip install opencc-python-reimplemented`）產生簡體，不要手改簡體。
+- GA4：沿用其他遊戲的事件規格（page_view、game_start、game_end、room_create、room_join、lobby_click），設定在 `client/index.html` 的 `GAME_ANALYTICS_CONFIG`；只在 `pjh-eric.github.io` 載入，本機與預覽不送資料，也不送姓名、房號或邀請 token。
+- 首頁左上角「回遊戲大廳」連結到遊戲大廳並帶目前語言。
 
 ## 已知限制
 

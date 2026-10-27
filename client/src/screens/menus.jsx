@@ -97,7 +97,7 @@ export function HelpPage() {
           <Text muted small>{t('help.ctl.energy')}</Text>
         </Panel>
         <Panel><Heading level={3}>{t('help.fruit')}</Heading><ul className="help-list">{[1, 2, 3, 4].map(i => <li key={i}>{t('help.fruit.' + i)}</li>)}</ul></Panel>
-        <Panel><Heading level={3}>{t('help.out')}</Heading><ul className="help-list">{[1, 2, 3, 4].map(i => <li key={i}>{t('help.out.' + i)}</li>)}</ul></Panel>
+        <Panel><Heading level={3}>{t('help.out')}</Heading><ul className="help-list">{[1, 2, 3, 4, 5].map(i => <li key={i}>{t('help.out.' + i)}</li>)}</ul></Panel>
       </div>
       <Panel>
         <Heading level={3}>{t('help.modes')}</Heading>

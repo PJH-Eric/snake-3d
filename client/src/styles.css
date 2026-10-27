@@ -240,7 +240,10 @@ button { cursor: pointer; }
 .count { position: absolute; z-index: 12; left: 50%; top: 40%; transform: translate(-50%, -50%); font-family: var(--font-d); font-weight: 800; font-size: clamp(5rem, 22vw, 9rem); color: #ffe27a; -webkit-text-stroke: 8px var(--ink); paint-order: stroke fill; pointer-events: none; animation: bump 0.45s ease-out; white-space: nowrap; }
 @keyframes bump { from { transform: translate(-50%, -50%) scale(1.5); } }
 .energy { position: absolute; z-index: 10; left: 16px; bottom: calc(var(--safe-b) + 16px); width: 240px; height: 34px; padding: 6px; border: var(--bd) solid var(--ink); border-radius: 16px; background: var(--paper); }
-.energy-bar { height: 100%; border-radius: 8px; background: #e6dccb; overflow: hidden; }
+.energy { display: flex; align-items: center; gap: 6px; padding: 6px 10px 6px 8px; }
+.energy-ico { flex: none; color: var(--orange-d); fill: var(--gold); }
+.energy-ico.tired { color: #a8957c; fill: #e6dccb; }
+.energy-bar { flex: 1; min-width: 0; height: 100%; border-radius: 8px; background: #e6dccb; overflow: hidden; }
 .energy-fill { height: 100%; background: var(--orange); transition: width 0.1s linear; } .energy-fill.tired { background: #c9b8a0; }
 .ghost { position: absolute; z-index: 10; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); justify-content: center; bottom: calc(var(--safe-b) + 14px); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; border: var(--bd) solid var(--ink); border-radius: 18px; background: var(--paper); font-weight: 800; }
 .touch { position: absolute; inset: 0; z-index: 8; pointer-events: none; }

@@ -114,6 +114,14 @@ t('吃蘋果 +10、慢慢長 2 節；金星 +30；發光果實 +5', () => {
   tick(s);
   assert.strictEqual(p.score, 45);
 });
+t('一般果實有 8 種外觀，分數與成長都一樣', () => {
+  const kinds = new Set();
+  for (let seed = 1; seed <= 20; seed++) for (const f of game(2, { seed }).foods) if (f.type === 0) { assert(Number.isInteger(f.v) && f.v >= 0 && f.v < 8, '外觀編號超出範圍：' + f.v); kinds.add(f.v); }
+  assert.strictEqual(kinds.size, 8, '8 種外觀都應該出現：' + [...kinds].sort().join(','));
+  const s = game(1); toPlay(s); clearFoods(s);
+  const p = put(s, 0, 0, 0, 0);
+  for (const v of [0, 3, 7]) { const before = p.score; s.foods.push({ id: 9100 + v, x: p.x, z: p.z, type: 0, v, ttl: 0 }); tick(s); assert.strictEqual(p.score - before, 10, '外觀 ' + v + ' 的分數'); }
+});
 t('長越長越粗、越粗轉得越慢', () => {
   assert(R.radiusFor(80) > R.radiusFor(10));
   assert(R.turnRate(R.radiusFor(80)) < R.turnRate(R.radiusFor(10)));

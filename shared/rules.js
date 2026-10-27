@@ -36,6 +36,7 @@ const Rules = (function () {
     { name: 'gold', score: 30, grow: 6, ttl: 15, rad: 0.55 },
     { name: 'orb', score: 5, grow: 1, ttl: 45, rad: 0.36 }
   ];
+  const FRUIT_KINDS = 8;            /* 一般果實（type 0）的外觀種類：蘋果、橘子、梨子、蜜桃、檸檬、李子、櫻桃、藍莓；分數與成長都相同 */
   const MAX_FOODS = 260;
   const MAX_ORBS_PER_DEATH = 50;
   const TAU = Math.PI * 2;
@@ -164,7 +165,7 @@ const Rules = (function () {
       }
       if (!ok) return null;
     }
-    const f = { id: s.foodSeq++, x, z, type, v: v != null ? v : Math.floor(s.rnd() * 3), ttl: FOOD[type].ttl };
+    const f = { id: s.foodSeq++, x, z, type, v: v != null ? v : Math.floor(s.rnd() * FRUIT_KINDS), ttl: FOOD[type].ttl };
     s.foods.push(f);
     if (s.track) s.fAdd.push(f);
     return f;
