@@ -89,6 +89,24 @@ ok(await startBtn.isEnabled(), '準備好後房主可開始遊戲');
 await startBtn.click();
 ok(await hasText(guest, '加速', 20000), '玩家進入對戰畫面');
 ok(await hasText(spec, '正在看', 20000), '觀戰者進入對戰畫面（正在看某位玩家，沒有操作按鈕）');
+/* 觀戰者點分數列／資訊欄的玩家切換視角；仍在場上的玩家不能點 */
+ok(await guest.locator('.hud-chip.pick, .sum-row.pick').count() === 0, '還活著的玩家：分數列與資訊欄不能點選切換');
+{
+  const watching = async () => (await spec.locator('.ghost span').first().innerText()).trim();
+  const picks = spec.locator('.hud-chip.pick');
+  ok(await picks.count() >= 2, '觀戰者分數列的存活玩家可點選（' + await picks.count() + ' 位）');
+  const before = await watching();
+  await spec.locator('.hud-chip.pick:not(.fol)').first().click();
+  ok(await spec.waitForFunction(prev => { const el = document.querySelector('.ghost span'); return el && el.innerText.trim() !== prev; }, before, { timeout: 5000 }).then(() => true, () => false), '點分數列的玩家後視角切換（' + before + ' → ' + await watching() + '）');
+  ok(await spec.locator('.hud-chip.fol').count() === 1, '目前觀看的玩家在分數列被標示');
+  await spec.getByRole('button', { name: '展開資訊欄' }).first().click().catch(() => {});
+  if (await spec.locator('.sum-row.pick').count()) {
+    const b2 = await watching();
+    await spec.locator('.sum-row.pick:not(.fol)').first().click();
+    ok(await spec.waitForFunction(prev => document.querySelector('.ghost span').innerText.trim() !== prev, b2, { timeout: 5000 }).then(() => true, () => false), '點資訊欄的玩家後視角切換');
+    await spec.getByRole('button', { name: '收合資訊欄' }).first().click().catch(() => {});
+  } else ok(false, '資訊欄開啟後存活玩家可點選');
+}
 await host.waitForTimeout(3500);
 if (shots) { await host.screenshot({ path: out + 'online-game-host.png' }); await guest.screenshot({ path: out + 'online-game-guest.png' }); await spec.screenshot({ path: out + 'online-game-spec.png' }); }
 

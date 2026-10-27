@@ -21,6 +21,7 @@ const Rules = (function () {
   const TURN = 4.2;                 /* 每秒最大轉向（弧度），粗了會變慢 */
   const BOOST_MUL = 1.75;
   const ENERGY_DRAIN = 0.45, ENERGY_REGEN = 0.16, ENERGY_RESUME = 0.15;
+  const WALL_DRAIN = 0.7;           /* 貼著圍欄時每秒額外扣掉的能量（扣光就進入疲勞，不能加速） */
   const GROW_RATE = 8;              /* 每秒最多長幾節（吃到的長度慢慢長出來） */
   const THEME_COUNT = 6;
   const TIME_LIMITS = [0, 120, 180, 300];
@@ -239,12 +240,14 @@ const Rules = (function () {
     samplePts(p);
   }
 
-  /* 圍欄不會讓蛇出局：頭碰到圍欄就被擋在內側，並順著圍欄切線滑行（直到玩家把方向轉回場內） */
+  /* 圍欄不會讓蛇出局：頭碰到圍欄就被擋在內側，並順著圍欄切線滑行（直到玩家把方向轉回場內）；貼著圍欄期間會扣加速能量 */
   function slideAlongWall(s, p) {
     const lim = s.R - p.r * 0.6 - 0.01, d = Math.hypot(p.x, p.z);
     if (d <= lim) return;
     const nx = p.x / d, nz = p.z / d;
     p.x = nx * lim; p.z = nz * lim;
+    p.energy = Math.max(0, p.energy - WALL_DRAIN * DT);
+    if (p.energy <= 0) { p.tired = true; p.boosting = false; }
     if (Math.cos(p.ang) * nx + Math.sin(p.ang) * nz > 0) {
       const side = Math.cos(p.ang) * -nz + Math.sin(p.ang) * nx >= 0 ? 1 : -1;
       p.ang = Math.atan2(side * nx, -side * nz);

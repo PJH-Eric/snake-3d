@@ -232,7 +232,7 @@ button { cursor: pointer; }
 .hud-timer { font-family: var(--font-d); font-size: 1.6rem; min-width: 96px; justify-content: center; min-height: 48px; }
 .hud-chip { font-size: 0.95rem; }
 .hud-chip i { display: inline-block; width: 12px; height: 12px; border: 2px solid var(--ink); border-radius: 50%; }
-.hud-chip.pick { font: inherit; font-weight: 700; font-size: 0.95rem; color: inherit; cursor: pointer; min-height: 36px; }
+.hud-chip.pick { pointer-events: auto; font: inherit; font-weight: 700; font-size: 0.95rem; color: inherit; cursor: pointer; min-height: 36px; }
 .hud-chip.fol { background: #ffe9c2; border-color: var(--orange-d); }
 .hud-chip.me { background: #fff4d2; } .hud-chip.out { opacity: 0.55; }
 .minimap { position: absolute; z-index: 10; right: calc(var(--safe-r) + 12px); top: calc(var(--safe-t) + 72px); border: var(--bd) solid var(--ink); border-radius: 50%; background: var(--paper); box-shadow: var(--shadow); }

@@ -132,6 +132,23 @@ t('撞圍欄不出局：被擋在內側並順著圍欄滑行，轉回場內就�
   tick(s, 60);
   assert(Math.hypot(p.x, p.z) < s.R - 3, '把方向轉回場內後會離開圍欄');
 });
+t('貼著圍欄會扣加速能量，扣光就疲勞不能加速；離開圍欄後恢復', () => {
+  const s = game(1); toPlay(s); clearFoods(s);
+  const p = put(s, 0, s.R - 1.2, 0, 0, 20);
+  assert.strictEqual(p.energy, 1);
+  tick(s, 30);
+  assert(p.energy < 0.7, '貼著圍欄一秒應扣掉明顯的能量：' + p.energy);
+  tick(s, 90);
+  assert.strictEqual(p.energy, 0);
+  assert(p.tired, '能量扣光要進入疲勞');
+  R.setBoost(s, 0, true);
+  tick(s);
+  assert(!p.boosting, '疲勞時不能加速');
+  R.setBoost(s, 0, false);
+  p.ta = Math.atan2(-p.z, -p.x);
+  tick(s, 120);
+  assert(Math.hypot(p.x, p.z) < s.R - 3 && p.energy > 0, '離開圍欄後能量開始回充');
+});
 t('單人挑戰：撞到障礙才結束（整條身體變成發光果實）', () => {
   const s = game(1); toPlay(s); clearFoods(s);
   s.rocks = [[5, 0, 1]];
