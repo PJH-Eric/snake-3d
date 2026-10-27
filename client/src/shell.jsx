@@ -101,12 +101,10 @@ export function SettingsModal({ onClose }) {
       {onOff('minimap', t('set.map'))}
       <Segmented label={t('set.quality')} hint={t('set.quality.hint')} value={d.quality} onChange={v => update({ quality: v })}
         options={[{ value: 'high', label: t('set.quality.high') }, { value: 'normal', label: t('set.quality.normal') }, { value: 'low', label: t('set.quality.low') }]} />
-      <Segmented label={t('set.stick')} hint={t('set.stick.hint')} value={d.stickMode} onChange={v => update({ stickMode: v })}
-        options={[{ value: 'float', label: t('set.stick.float') }, { value: 'fixed', label: t('set.stick.fixed') }]} />
-      <Segmented label={t('set.side')} hint={t('set.side.hint')} value={d.stickSide} onChange={v => update({ stickSide: v })}
-        options={[{ value: 'left', label: t('set.side.left') }, { value: 'right', label: t('set.side.right') }]} />
-      <Segmented label={t('set.touch')} value={d.touchMode} onChange={v => update({ touchMode: v })}
-        options={[{ value: 'auto', label: t('set.touch.auto') }, { value: 'on', label: t('set.touch.on') }, { value: 'off', label: t('set.touch.off') }]} />
+      <Segmented label={t('set.stick')} hint={t('set.stick.hint')} value={d.controlMode} onChange={v => update({ controlMode: v })}
+        options={[{ value: 'finger', label: t('set.stick.float') }, { value: 'joystick', label: t('set.stick.fixed') }]} />
+      {d.controlMode === 'joystick' && <Segmented label={t('set.side')} hint={t('set.side.hint')} value={d.stickSide} onChange={v => update({ stickSide: v })}
+        options={[{ value: 'left', label: t('set.side.left') }, { value: 'right', label: t('set.side.right') }]} />}
       {onOff('vibrate', t('set.vibrate'))}
       {onOff('reduceMotion', t('set.calm'))}
       <Text small muted>{t('set.keys')} <Keycap>←↑↓→</Keycap> <Keycap>WASD</Keycap> <Keycap>Space</Keycap> <Keycap>Shift</Keycap></Text>

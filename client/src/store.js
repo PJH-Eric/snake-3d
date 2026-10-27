@@ -5,20 +5,25 @@ const KEY = 'snake3d.save.v1';
 
 const defaults = () => ({
   bgm: true, bgmVol: 0.5, sfx: true, sfxVol: 0.8, vibrate: true, reduceMotion: false,
-  touchMode: 'auto', stickMode: 'float', stickSide: 'left', zoom: 'normal', minimap: true, quality: 'normal',
+  controlMode: 'finger', stickSide: 'left', zoom: 'normal', minimap: true, quality: 'normal',
   nickname: '', animal: '', adj: Math.floor(Math.random() * 10),
   solo: { levels: ['easy', 'normal', 'hard'], speed: 'normal', obstacles: 'few', timeLimit: 0, theme: -1 },
   challenge: { speed: 'normal', obstacles: 'few', theme: -1 },
   best: {}, statSolo: { play: 0, win: 0 }, statOnline: { play: 0, win: 0 }, statChallenge: { play: 0, win: 0 },
   clientKey: ''
 });
-export const SETTING_KEYS = ['bgm', 'bgmVol', 'sfx', 'sfxVol', 'vibrate', 'reduceMotion', 'touchMode', 'stickMode', 'stickSide', 'zoom', 'minimap', 'quality'];
+export const SETTING_KEYS = ['bgm', 'bgmVol', 'sfx', 'sfxVol', 'vibrate', 'reduceMotion', 'controlMode', 'stickSide', 'zoom', 'minimap', 'quality'];
 
 function load() {
   const base = defaults();
   let saved = null;
   try { saved = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch { saved = null; }
   const d = saved && typeof saved === 'object' ? { ...base, ...saved } : base;
+  if (!['finger', 'joystick'].includes(saved?.controlMode)) {
+    d.controlMode = saved?.stickMode === 'fixed' && saved?.touchMode !== 'off' ? 'joystick' : 'finger';
+  }
+  delete d.stickMode;
+  delete d.touchMode;
   d.solo = { ...base.solo, ...(d.solo || {}) };
   if (!Array.isArray(d.solo.levels) || !d.solo.levels.length) d.solo.levels = base.solo.levels;
   d.challenge = { ...base.challenge, ...(d.challenge || {}) };

@@ -198,7 +198,7 @@ export function GamePage({ params }) {
   const wide = vp.w >= 860 && vp.w > vp.h;
   const [sideOpen, setSideOpen] = useState(wide);
   const [mainW, setMainW] = useState(vp.w);
-  const sawTouch = useRef(false);
+  const [sawTouch, setSawTouch] = useState(false);
   const stick = useRef(null);
   const sideWasWide = useRef(wide);
 
@@ -228,6 +228,11 @@ export function GamePage({ params }) {
       const dt = Math.min(0.1, (now - last) / 1000); last = now;
       const alpha = s.tick(dt);
       s.frame(dt, alpha);
+      const pointer = stick.current;
+      if (pointer?.mode === 'finger' && !isModalOpen()) {
+        const angle = world.aimAtScreen(pointer.x, pointer.y, s.me());
+        if (angle != null) s.aim(angle);
+      }
       raf = requestAnimationFrame(loop);
     };
     raf = requestAnimationFrame(loop);
@@ -288,8 +293,8 @@ export function GamePage({ params }) {
 
   const compact = mainW < 700;
   const me = hud && hud.me;
-  const touchOn = !!hud && hud.slot >= 0 && hud.phase !== 'over' && !!me && me.alive &&
-    (save.touchMode === 'on' || (save.touchMode === 'auto' && (sawTouch.current || coarse())));
+  const canSteer = !!hud && hud.slot >= 0 && hud.phase !== 'over' && !!me && me.alive;
+  const touchOn = canSteer && (save.controlMode === 'joystick' || sawTouch || coarse());
   const portrait = vp.h > vp.w;
   useEffect(() => {
     if (!session) return;
@@ -299,43 +304,45 @@ export function GamePage({ params }) {
   useEffect(() => { if (!touchOn && session) { session.setBoostTouch(false); } }, [touchOn, session]);
 
   /* ---------- 搖桿 ---------- */
-  const rectOf = () => mainRef.current.getBoundingClientRect();
-  const zone = () => {
-    const r = rectOf(), right = save.stickSide === 'right', size = 230;
-    return { cx: right ? r.right - 24 - size / 2 : r.left + 24 + size / 2, cy: r.bottom - 24 - size / 2, size };
-  };
-  const placeStick = useCallback((x, y, show) => {
-    const st = stickRef.current;
-    if (!st) return;
-    const r = rectOf();
-    st.style.left = x - r.left + 'px'; st.style.top = y - r.top + 'px'; st.style.display = show ? 'block' : 'none';
+  const resetPointer = useCallback(() => {
+    stick.current = null;
     if (knobRef.current) knobRef.current.style.transform = 'translate(0,0)';
   }, []);
   useEffect(() => {
-    if (!stickRef.current || !mainRef.current) return;
-    if (touchOn && save.stickMode === 'fixed' && !stick.current) { const z = zone(); placeStick(z.cx, z.cy, true); }
-    else if (!stick.current) placeStick(0, 0, false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [touchOn, save.stickMode, save.stickSide, mainW, vp.h, sideOpen]);
+    resetPointer();
+  }, [resetPointer, modalOpen, canSteer, save.controlMode, save.stickSide, mainW, vp.h, sideOpen]);
+  useEffect(() => {
+    window.addEventListener('blur', resetPointer);
+    document.addEventListener('visibilitychange', resetPointer);
+    return () => {
+      window.removeEventListener('blur', resetPointer);
+      document.removeEventListener('visibilitychange', resetPointer);
+    };
+  }, [resetPointer]);
 
   const padDown = e => {
-    if (e.pointerType !== 'mouse') sawTouch.current = true;
-    if (!touchOn || stick.current || isModalOpen()) return;
-    if (e.pointerType === 'mouse' && save.touchMode !== 'on') return;
+    if (e.pointerType !== 'mouse') setSawTouch(true);
+    if (!canSteer || stick.current || isModalOpen()) return;
+    if (e.pointerType === 'mouse' && save.controlMode !== 'joystick') return;
     let ox = e.clientX, oy = e.clientY;
-    if (save.stickMode === 'fixed') {
-      const z = zone();
-      if (Math.abs(e.clientX - z.cx) > z.size / 2 || Math.abs(e.clientY - z.cy) > z.size / 2) return;
-      ox = z.cx; oy = z.cy;
+    if (save.controlMode === 'joystick') {
+      const r = stickRef.current.getBoundingClientRect();
+      ox = r.left + r.width / 2; oy = r.top + r.height / 2;
+      if (Math.hypot(e.clientX - ox, e.clientY - oy) > r.width / 2 + 18) return;
     }
-    stick.current = { id: e.pointerId, ox, oy };
+    stick.current = { id: e.pointerId, ox, oy, mode: save.controlMode, x: e.clientX, y: e.clientY };
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* 合成事件沒有可捕捉的指標 */ }
-    placeStick(ox, oy, true);
     padMove(e);
   };
   const padMove = e => {
     const s = stick.current;
     if (!s || s.id !== e.pointerId || isModalOpen()) return;
+    s.x = e.clientX; s.y = e.clientY;
+    if (s.mode === 'finger') {
+      const angle = session?.world.aimAtScreen(s.x, s.y, session.me());
+      if (angle != null) session.aim(angle);
+      return;
+    }
     const dx = e.clientX - s.ox, dy = e.clientY - s.oy, L = Math.hypot(dx, dy), max = 56;
     const k = L > max ? max / L : 1;
     if (knobRef.current) knobRef.current.style.transform = `translate(${dx * k}px,${dy * k}px)`;
@@ -344,8 +351,7 @@ export function GamePage({ params }) {
   const padUp = e => {
     const s = stick.current;
     if (!s || s.id !== e.pointerId) return;
-    stick.current = null;
-    if (save.stickMode === 'fixed' && touchOn) { const z = zone(); placeStick(z.cx, z.cy, true); } else placeStick(0, 0, false);
+    resetPointer();
   };
 
   const openMenu = () => { if (!result) setMenu(true); };
@@ -373,9 +379,9 @@ export function GamePage({ params }) {
       <div className="game-main" ref={mainRef}>
         <canvas ref={canvasRef} className="game-canvas" tabIndex={-1} role="img" aria-label={t('game.stage')} />
         {hud && hud.slot >= 0 && <div className="touch-pad" style={{ position: 'absolute', inset: 0, zIndex: 7, touchAction: 'none' }}
-          onPointerDown={padDown} onPointerMove={padMove} onPointerUp={padUp} onPointerCancel={padUp} />}
+          onPointerDown={padDown} onPointerMove={padMove} onPointerUp={padUp} onPointerCancel={padUp} onLostPointerCapture={padUp} />}
         <div className="touch">
-          <div className="stick" ref={stickRef} style={{ display: 'none' }} role="img" aria-label={t('stick.aria')}><div className="stick-knob" ref={knobRef} /></div>
+          <div className={'stick ' + save.stickSide} ref={stickRef} style={{ display: touchOn && save.controlMode === 'joystick' ? 'block' : 'none' }} role="img" aria-label={t('stick.aria')}><div className="stick-knob" ref={knobRef} /></div>
         </div>
         {touchOn && (
           <div className={'boost ' + (save.stickSide === 'right' ? 'left' : 'right')}>

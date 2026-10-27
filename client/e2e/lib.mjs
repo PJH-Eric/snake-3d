@@ -28,6 +28,14 @@ export async function newPage(browser, size, lang = 'zh-Hant', url = APP) {
   return page;
 }
 
+/** 將已知場地目標投影成實際觸控點，驗證輸入端是否朝該方向轉向。 */
+export const fingerPoint = (page, dx, dz) => page.evaluate(([dx, dz]) => {
+  const s = window.__snake3d.session, world = s.world, me = s.me();
+  const point = world.cam.position.clone().set(me.x + dx, 0, me.z + dz).project(world.cam);
+  const rect = document.querySelector('.game-canvas').getBoundingClientRect();
+  return [rect.left + (point.x + 1) * rect.width / 2, rect.top + (1 - point.y) * rect.height / 2];
+}, [dx, dz]);
+
 /** 回傳目前畫面的版面問題：水平溢出、元素超出視窗、按鈕／晶片文字被截斷。 */
 export async function layoutIssues(page) {
   /* 進場動畫（抽屜滑入、倒數彈跳）進行中會量到暫態位置，先等有限動畫結束再量 */

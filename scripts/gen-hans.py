@@ -10,6 +10,7 @@ OVERRIDES = {  # key -> 手動指定的簡體
     'lang.zh-Hant': '繁體中文',
     'lang.zh-Hans': '简体中文',
     'lang.en': 'English',
+    'fruit.1': '菠萝',
 }
 POST = [('缺省', '默认')]  # OpenCC 把「預設」轉成「缺省」，統一改回常用的「默认」
 

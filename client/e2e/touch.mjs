@@ -1,5 +1,5 @@
-/* 觸控與設定 e2e：真實觸控事件（CDP）驅動搖桿與加速鈕；設定保存、固定搖桿、左右手、語言按鈕緊鄰設定。 */
-import { launch, newPage, layoutIssues, SIZES, APP } from './lib.mjs';
+/* 觸控與設定 e2e：真實觸控事件（CDP）驅動手指指向與加速鈕；設定保存、底部搖桿、左右手、語言與焦點。 */
+import { launch, newPage, layoutIssues, fingerPoint, SIZES, APP } from './lib.mjs';
 
 const out = (process.env.SHOT_DIR || '.shots') + '/';
 const shots = !!process.env.SHOTS;
@@ -27,21 +27,20 @@ for (const [sizeName, size] of [['phoneL', SIZES.phoneL], ['tabletP', SIZES.tabl
   ok(!(await page.locator('.energy').count()), '觸控模式不顯示桌機能量條（改為加速鈕外圈）');
   const w = size.width, h = size.height;
 
-  /* 浮動搖桿：按在哪裡就出現在哪裡，往右拖 → 目標角度約 0 */
-  await touch(cdp, 'touchStart', [[w * 0.4, h * 0.5]]);
-  ok(await page.locator('.stick').isVisible(), '手指按下後搖桿出現');
-  await touch(cdp, 'touchMove', [[w * 0.4 + 90, h * 0.5]]);
+  /* 依手指：直接指向場地位置，不顯示搖桿。 */
+  await touch(cdp, 'touchStart', [await fingerPoint(page, 4, 0)]);
+  ok(!(await page.locator('.stick').isVisible()), '依手指操作時不顯示搖桿');
   await page.waitForTimeout(150);
   let st = await state(page);
-  ok(Math.abs(st.ta) < 0.05, `往右拖 → 目標角度 ≈ 0（${st.ta.toFixed(2)}）`);
-  await touch(cdp, 'touchMove', [[w * 0.4, h * 0.5 + 90]]);
+  ok(Math.abs(st.ta) < 0.05, `指向右側 → 目標角度 ≈ 0（${st.ta.toFixed(2)}）`);
+  await touch(cdp, 'touchMove', [await fingerPoint(page, 0, 4)]);
   await page.waitForTimeout(150);
   st = await state(page);
-  ok(Math.abs(st.ta - Math.PI / 2) < 0.05, `往下拖 → 目標角度 ≈ π/2（${st.ta.toFixed(2)}）`);
-  if (shots) await page.screenshot({ path: `${out}touch-${sizeName}-stick.png` });
+  ok(Math.abs(st.ta - Math.PI / 2) < 0.05, `指向下方 → 目標角度 ≈ π/2（${st.ta.toFixed(2)}）`);
+  if (shots) await page.screenshot({ path: `${out}touch-${sizeName}-finger.png` });
   await touch(cdp, 'touchEnd', []);
   await page.waitForTimeout(100);
-  ok(!(await page.locator('.stick').isVisible()), '放開後搖桿消失');
+  ok(!(await page.locator('.stick').isVisible()), '放開手指後仍不顯示搖桿');
 
   /* 加速鈕 */
   const box = await page.locator('.boost-core').boundingBox();
@@ -54,8 +53,7 @@ for (const [sizeName, size] of [['phoneL', SIZES.phoneL], ['tabletP', SIZES.tabl
   ok((await state(page)).boost === false, '放開 → 停止加速');
 
   /* 搖桿與加速鈕同時（多指） */
-  await touch(cdp, 'touchStart', [[w * 0.3, h * 0.4], [bx, by]]);
-  await touch(cdp, 'touchMove', [[w * 0.3 - 80, h * 0.4], [bx, by]]);
+  await touch(cdp, 'touchStart', [await fingerPoint(page, -4, 0), [bx, by]]);
   await page.waitForTimeout(150);
   st = await state(page);
   ok(st.boost === true && Math.abs(Math.abs(st.ta) - Math.PI) < 0.05, `多指：同時轉向與加速（ta=${st.ta.toFixed(2)}, boost=${st.boost}）`);
@@ -71,7 +69,7 @@ for (const [sizeName, size] of [['phoneL', SIZES.phoneL], ['tabletP', SIZES.tabl
   const t1 = await page.evaluate(() => window.__snake3d.session.state.time);
   ok(t1 === t0, '單機：開啟設定時規則暫停');
   /* 固定搖桿＋右手 */
-  await page.getByRole('radio', { name: '固定位置' }).click();
+  await page.getByRole('radio', { name: '依搖桿', exact: true }).click();
   await page.getByRole('radio', { name: '右手邊' }).click();
   if (shots) await page.screenshot({ path: `${out}touch-${sizeName}-settings.png` });
   await page.keyboard.press('Escape');
@@ -90,7 +88,7 @@ for (const [sizeName, size] of [['phoneL', SIZES.phoneL], ['tabletP', SIZES.tabl
   await page.reload();
   await page.waitForSelector('.app');
   await page.getByRole('button', { name: '設定' }).click();
-  ok(await page.getByRole('radio', { name: '固定位置' }).getAttribute('aria-checked') === 'true', '重新進入後設定仍保留（localStorage）');
+  ok(await page.getByRole('radio', { name: '依搖桿', exact: true }).getAttribute('aria-checked') === 'true', '重新進入後設定仍保留（localStorage）');
   await page.keyboard.press('Escape');
   ok((await layoutIssues(page)).length === 0, '首頁無版面問題');
   ok(!page.errors.length, '沒有 console 錯誤：' + page.errors.join(' | '));

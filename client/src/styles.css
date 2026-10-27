@@ -250,7 +250,8 @@ button { cursor: pointer; }
 .energy-fill { height: 100%; background: var(--orange); transition: width 0.1s linear; } .energy-fill.tired { background: #c9b8a0; }
 .ghost { position: absolute; z-index: 10; left: 50%; transform: translateX(-50%); width: max-content; max-width: calc(100% - 24px); justify-content: center; bottom: calc(var(--safe-b) + 14px); display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding: 10px 14px; border: var(--bd) solid var(--ink); border-radius: 18px; background: var(--paper); font-weight: 800; }
 .touch { position: absolute; inset: 0; z-index: 8; pointer-events: none; }
-.stick { position: absolute; width: 150px; height: 150px; margin: -75px 0 0 -75px; border: 5px solid rgba(74, 51, 32, 0.55); border-radius: 50%; background: rgba(255, 255, 255, 0.28); pointer-events: none; }
+.stick { position: absolute; width: 150px; height: 150px; bottom: calc(var(--safe-b) + 26px); left: 26px; border: 5px solid rgba(74, 51, 32, 0.55); border-radius: 50%; background: rgba(255, 255, 255, 0.28); pointer-events: none; }
+.stick.right { left: auto; right: 26px; }
 .stick-knob { position: absolute; left: 50%; top: 50%; width: 70px; height: 70px; margin: -35px 0 0 -35px; border: 5px solid var(--ink); border-radius: 50%; background: rgba(255, 255, 255, 0.85); }
 .boost { position: absolute; z-index: 9; bottom: calc(var(--safe-b) + 26px); width: 124px; height: 124px; pointer-events: auto; }
 .boost.right { right: 26px; } .boost.left { left: 26px; }

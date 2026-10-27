@@ -2,6 +2,7 @@
  * 座標：規則核心的 (x, z) 直接對應 Three 的 (x, z)；畫面上方是 -z，鏡頭仰角 52°。 */
 import * as THREE from 'three';
 import Rules from '@shared/rules.js';
+import { screenAim } from './steering.js';
 import { animalDef, FRUIT_BODY, FRUIT_LEAF, slotColor, theme } from '../data.js';
 
 const EL = (52 * Math.PI) / 180;
@@ -601,6 +602,10 @@ export class World3D {
         if (e.slot === selfSlot && !reduceMotion) this.shake = 0.6;
       }
     }
+  }
+
+  aimAtScreen(x, y, player) {
+    return screenAim(this.cam, this.renderer.domElement.getBoundingClientRect(), x, y, player);
   }
 
   /* ---------- 鏡頭 ---------- */
