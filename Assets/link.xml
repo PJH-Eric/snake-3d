@@ -1,4 +1,0 @@
-<linker>
-  <!-- 規則核心與遊戲程式都在 Assembly-CSharp；JSON 與反射式的資料類別不要被 IL2CPP 裁掉 -->
-  <assembly fullname="Assembly-CSharp" preserve="all"/>
-</linker>
