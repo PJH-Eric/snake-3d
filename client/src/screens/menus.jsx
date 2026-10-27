@@ -7,7 +7,8 @@ import { go, myName } from '../app.js';
 import { getBest, update, useSave } from '../store.js';
 import { ANIMAL_IDS, animalName, levelHint, levelName, obstacleName, speedName, t, themeName, timeName, useLang } from '../i18n.js';
 import { pickAnimals, startChallenge, startSolo } from '../flow.js';
-import { FRUIT_BODY, SLOT_COLORS, THEME_OPTIONS } from '../data.js';
+import { SLOT_COLORS, THEME_OPTIONS } from '../data.js';
+import { FruitIcon } from '../ui/FruitIcon.jsx';
 import { lobbyClick, lobbyUrl } from '../analytics.js';
 
 export function Profile({ onChange }) {
@@ -101,7 +102,7 @@ export function HelpPage() {
           <Text>{t('help.fruit.1')}</Text>
           <ul className="fruit-grid">
             {Rules.FRUIT_SCORES.map((sc, i) => (
-              <li key={i} className="fruit-item"><span className="fruit-dot" style={{ background: FRUIT_BODY[i] }} aria-hidden="true" /><span>{t('fruit.' + i)}</span><b>+{sc}</b></li>
+              <li key={i} className="fruit-item"><FruitIcon kind={i} size={30} /><span>{t('fruit.' + i)}</span><b>+{sc}</b></li>
             ))}
           </ul>
           <ul className="help-list">{[2, 3, 4].map(i => <li key={i}>{t('help.fruit.' + i)}</li>)}</ul>
