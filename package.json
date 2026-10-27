@@ -1,0 +1,16 @@
+{
+  "name": "snake-3d",
+  "private": true,
+  "version": "2.0.0",
+  "description": "3D 貪吃蛇：React + Three.js 前端、Node.js 權威伺服器",
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "install:all": "npm --prefix client ci",
+    "dev:server": "npm --prefix server start",
+    "dev": "npm --prefix client run dev",
+    "build": "npm --prefix client run build",
+    "start": "npm --prefix server start",
+    "test": "npm --prefix server test && npm --prefix client test",
+    "e2e": "npm --prefix client run e2e"
+  }
+}

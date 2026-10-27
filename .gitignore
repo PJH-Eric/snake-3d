@@ -72,3 +72,4 @@ Backend~/*.log
 node_modules/
 client/dist/
 .env
+client/.shots/
