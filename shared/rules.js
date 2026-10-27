@@ -23,7 +23,7 @@ const Rules = (function () {
   const ENERGY_DRAIN = 0.45, ENERGY_REGEN = 0.16, ENERGY_RESUME = 0.15;
   const WALL_DRAIN = 0.7;           /* 貼著圍欄時每秒額外扣掉的能量（扣光就進入疲勞，不能加速） */
   const GROW_RATE = 8;              /* 每秒最多長幾節（吃到的長度慢慢長出來） */
-  const THEME_COUNT = 6;
+  const THEME_COUNT = 12;           /* 舞台（地圖）主題數；順序對應 client/src/data.js 的 THEMES */
   const TIME_LIMITS = [0, 120, 180, 300];
   const SPEEDS = { slow: { v: 3.8, name: '慢' }, normal: { v: 4.8, name: '中' }, fast: { v: 5.8, name: '快' } };
   const SPEED_ORDER = ['slow', 'normal', 'fast'];

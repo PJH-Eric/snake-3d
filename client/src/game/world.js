@@ -12,14 +12,25 @@ const PUFF_CAP = 320;
 const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3(), tmpE = new THREE.Euler(), tmpC = new THREE.Color();
 const ZERO_Q = new THREE.Quaternion();
 /* 場地道具（純視覺；碰撞與果實規則由 shared/rules.js 決定）：石頭會擋路，草叢與小花可以直接穿過 */
-/* 每個舞台主題（順序同 data.js 的 THEMES）各有草叢配色與地面小物：花、糖粒、貝殼、冰晶、螢火蟲、落葉 */
+/* 草叢（參考扁平線條風草叢圖示）：淺綠色小土丘上長出幾片高高彎彎、尖尖的草葉，深淺兩種綠色，偶爾夾一兩片橘色；所有地圖都是同一種外觀（受各舞台光線影響而明暗不同） */
+const GRASS_COLORS = ['#58b85a', '#3f9f4f', '#6dc26a'];
+const GRASS_ACCENT = '#ff7a45';
+const GRASS_MOUND = '#b6dd6a';
+const GRASS_BLADES = 7;
+/* 每個舞台主題（順序同 data.js 的 THEMES）各有自己的地面小物：花、糖粒、貝殼、冰晶、螢火蟲、落葉等；草叢在所有地圖都長一樣（見 GRASS_COLORS） */
 const STAGE_PROPS = [
-  { bush: ['#4cc26a', '#3fae5c', '#6fd37a'], decal: ['#ff9ec7', '#ffe27a', '#ffffff', '#c9a7ff', '#ffb259'], n: 34, glow: false },
-  { bush: ['#ff9ec7', '#ffc2dc', '#d9a7ff'], decal: ['#ff6f9f', '#ffd23d', '#7fdcec', '#ffffff', '#a58bff'], n: 46, glow: false },
-  { bush: ['#2fa89a', '#4cc2a6', '#7fd6b0'], decal: ['#fff3dc', '#ffc2b3', '#ffffff', '#f6d58a'], n: 30, glow: false },
-  { bush: ['#e9f4f7', '#cfe6ee', '#a8d3c0'], decal: ['#ffffff', '#cdeefa', '#e9f7ff'], n: 40, glow: false },
-  { bush: ['#2e6b6f', '#3b7f78', '#2a5a66'], decal: ['#ffe27a', '#9ef5c8', '#c9a7ff'], n: 36, glow: true },
-  { bush: ['#7bb85b', '#5fa84c', '#9bd073'], decal: ['#e6d27a', '#c9b86a', '#fff0a8', '#a6d985'], n: 34, glow: false }
+  { decal: ['#ff9ec7', '#ffe27a', '#ffffff', '#c9a7ff', '#ffb259'], n: 34, glow: false },
+  { decal: ['#ff6f9f', '#ffd23d', '#7fdcec', '#ffffff', '#a58bff'], n: 46, glow: false },
+  { decal: ['#fff3dc', '#ffc2b3', '#ffffff', '#f6d58a'], n: 30, glow: false },
+  { decal: ['#ffffff', '#cdeefa', '#e9f7ff'], n: 40, glow: false },
+  { decal: ['#ffe27a', '#9ef5c8', '#c9a7ff'], n: 36, glow: true },
+  { decal: ['#e6d27a', '#c9b86a', '#fff0a8', '#a6d985'], n: 34, glow: false },
+  { decal: ['#d9a86a', '#c4915a', '#f0d09a'], n: 30, glow: false },
+  { decal: ['#d9482f', '#f08a2e', '#f2c14a', '#a8452b'], n: 44, glow: false },
+  { decal: ['#fff3dc', '#ffc2d0', '#ffffff', '#bff0ff'], n: 36, glow: false },
+  { decal: ['#ffffff', '#ffe27a', '#9ef5ff'], n: 46, glow: true },
+  { decal: ['#ffffff', '#ffd1e0', '#ffb3cd'], n: 48, glow: false },
+  { decal: ['#ff7a45', '#ffb347', '#ff5a36'], n: 40, glow: true }
 ];
 /* 背景飄浮物（順序同舞台主題）：花瓣、糖粒、泡泡、雪花、螢火蟲、落葉；vy 為垂直速度（負＝下落）、sway 為左右飄動幅度 */
 const AMBIENT = [
@@ -28,7 +39,13 @@ const AMBIENT = [
   { color: ['#e8fbff', '#bff0ff'], size: 0.22, vy: 0.55, sway: 0.5, n: 30 },
   { color: ['#ffffff', '#e6f6ff'], size: 0.14, vy: -0.9, sway: 0.6, n: 70 },
   { color: ['#fff39a', '#b9ffd9'], size: 0.13, vy: 0, sway: 1.6, n: 34, firefly: true },
-  { color: ['#cfe79a', '#e6d27a', '#9bd073'], size: 0.18, vy: -0.5, sway: 1.1, n: 34 }
+  { color: ['#cfe79a', '#e6d27a', '#9bd073'], size: 0.18, vy: -0.5, sway: 1.1, n: 34 },
+  { color: ['#f5deb3', '#e8c48a'], size: 0.12, vy: 0.05, sway: 2.2, n: 40 },
+  { color: ['#e2742d', '#d9482f', '#f2c14a'], size: 0.2, vy: -0.7, sway: 1.3, n: 40 },
+  { color: ['#e8fbff', '#bff0ff', '#ffd1e0'], size: 0.2, vy: 0.5, sway: 0.5, n: 36 },
+  { color: ['#ffffff', '#ffe27a', '#9ef5ff'], size: 0.13, vy: 0, sway: 1.2, n: 50, firefly: true },
+  { color: ['#ffd1e0', '#ffffff', '#ffb3cd'], size: 0.18, vy: -0.5, sway: 1.0, n: 50 },
+  { color: ['#ff7a45', '#ffb347', '#ff5a36'], size: 0.12, vy: 0.9, sway: 0.8, n: 36 }
 ];
 const AMBIENT_TOP = 8;
 /* 果實外型 [寬, 高]，順序同 FRUIT_BODY：蘋果、橘子、梨子、蜜桃、檸檬、李子、櫻桃、藍莓 */
@@ -208,23 +225,27 @@ export class World3D {
       let bs = (view.themeId * 7919 + Math.round(r) * 131 + 17) >>> 0;
       const br = () => { bs = (bs * 1664525 + 1013904223) >>> 0; return bs / 4294967296; };
       const nBush = this.quality === 'low' ? 7 : Math.round(r * 0.55);
-      const blobs = this.instanced(g.sphere, this.own(new THREE.MeshLambertMaterial({ color: 0xffffff })), nBush * 3, this.quality !== 'low', true);
-      let nb = 0;
-      this.bushes = { mesh: blobs, base: [] };
+      const blades = GRASS_BLADES - (this.quality === 'low' ? 3 : 0);
+      const mesh = this.instanced(g.cone, this.own(new THREE.MeshLambertMaterial({ color: 0xffffff })), nBush * blades, false, true);
+      const base = [], tufts = [];
       for (let i = 0, tries = 0; i < nBush && tries < nBush * 12; tries++) {
-        const a = br() * Math.PI * 2, dd = Math.sqrt(br()) * (r - 2.2), x = Math.cos(a) * dd, z = Math.sin(a) * dd, sz = 1.3 + br() * 0.9;
-        if (view.rocks.some(k => Math.hypot(k[0] - x, k[1] - z) < k[2] + sz)) continue;
-        for (let j = 0; j < 3; j++) {
-          const ja = br() * Math.PI * 2, jd = j === 0 ? 0 : sz * 0.32, d = sz * (j === 0 ? 1 : 0.72 + br() * 0.2);
-          const bx = x + Math.cos(ja) * jd, bz = z + Math.sin(ja) * jd;
-          this.bushes.base.push([bx, d * 0.3, bz, d, br() * Math.PI * 2]);
-          blobs.setMatrixAt(nb, tmpM.compose(tmpP.set(bx, d * 0.3, bz), ZERO_Q, tmpS.set(d, d * 0.62, d)));
-          blobs.setColorAt(nb, tmpC.set(stage.bush[(i + j) % stage.bush.length]));
-          nb++;
+        const a = br() * Math.PI * 2, dd = Math.sqrt(br()) * (r - 2.2), x = Math.cos(a) * dd, z = Math.sin(a) * dd;
+        if (view.rocks.some(k => Math.hypot(k[0] - x, k[1] - z) < k[2] + 1.4)) continue;
+        tufts.push([x, z]);
+        for (let j = 0; j < blades; j++) {
+          const mid = j === 0, ja = br() * Math.PI * 2, jd = mid ? 0 : 0.14 + br() * 0.36;
+          base.push({ x: x + Math.cos(ja) * jd, z: z + Math.sin(ja) * jd, h: (mid ? 1.85 : 1.0 + br() * 0.65), w: 0.28 + br() * 0.1, yaw: ja, tilt: mid ? 0.05 : 0.18 + br() * 0.34, ph: br() * Math.PI * 2, accent: !mid && br() < 0.2 });
         }
         i++;
       }
-      blobs.count = nb; blobs.instanceMatrix.needsUpdate = true; if (nb) blobs.instanceColor.needsUpdate = true;
+      base.forEach((bl, n) => mesh.setColorAt(n, tmpC.set(bl.accent ? GRASS_ACCENT : GRASS_COLORS[n % GRASS_COLORS.length])));
+      /* 草叢底下的淺綠色小土丘 */
+      const mounds = this.instanced(g.sphere, this.own(new THREE.MeshLambertMaterial({ color: 0xffffff })), Math.max(1, tufts.length), false, true);
+      tufts.forEach(([x, z], n) => { mounds.setMatrixAt(n, tmpM.compose(tmpP.set(x, 0.03, z), ZERO_Q, tmpS.set(1.7, 0.36, 1.7))); mounds.setColorAt(n, tmpC.set(GRASS_MOUND)); });
+      mounds.count = tufts.length; mounds.instanceMatrix.needsUpdate = true; if (tufts.length) mounds.instanceColor.needsUpdate = true;
+      mesh.count = base.length; mesh.instanceColor.needsUpdate = true;
+      this.bushes = { mesh, base };
+      this.placeGrass(0);
     }
 
     /* 地面小花：只是裝飾，不影響規則 */
@@ -293,6 +314,20 @@ export class World3D {
     this.amb = { mesh, parts, cfg };
   }
 
+  /** 擺放全部草葉；t 為時間（秒），草葉的傾斜角隨時間輕輕擺動 */
+  placeGrass(t, sway = true) {
+    const { mesh, base } = this.bushes;
+    const ax = new THREE.Vector3(), q = new THREE.Quaternion();
+    for (let i = 0; i < base.length; i++) {
+      const b = base[i], tilt = b.tilt + (sway ? Math.sin(t * 1.6 + b.ph) * 0.07 : 0);
+      ax.set(Math.sin(b.yaw), 0, -Math.cos(b.yaw));
+      q.setFromAxisAngle(ax, tilt);
+      const lean = Math.sin(tilt) * b.h * 0.5;
+      mesh.setMatrixAt(i, tmpM.compose(tmpP.set(b.x + Math.cos(b.yaw) * lean, Math.cos(tilt) * b.h * 0.5, b.z + Math.sin(b.yaw) * lean), q, tmpS.set(b.w, b.h, b.w)));
+    }
+    mesh.instanceMatrix.needsUpdate = true;
+  }
+
   /** 每幀：背景飄浮物移動、草叢輕搖；「減少動態」開啟時全部靜止並隱藏飄浮物 */
   animateStage(dt) {
     const calm = document.documentElement.classList.contains('reduce-motion');
@@ -317,14 +352,7 @@ export class World3D {
         mesh.instanceMatrix.needsUpdate = true;
       }
     }
-    if (this.bushes && !calm) {
-      const { mesh, base } = this.bushes;
-      for (let i = 0; i < base.length; i++) {
-        const b = base[i], k = Math.sin(t * 1.5 + b[4]);
-        mesh.setMatrixAt(i, tmpM.compose(tmpP.set(b[0] + k * 0.025, b[1], b[2]), ZERO_Q, tmpS.set(b[3] * (1 + 0.035 * k), b[3] * 0.62 * (1 - 0.05 * k), b[3] * (1 + 0.035 * k))));
-      }
-      mesh.instanceMatrix.needsUpdate = true;
-    }
+    if (this.bushes && !calm) this.placeGrass(t);
   }
 
   buildPuffs() {

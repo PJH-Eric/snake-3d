@@ -85,7 +85,7 @@ export function TopRight() {
 
 export function SettingsModal({ onClose }) {
   const d = useSave();
-  const lang = useLang();
+  useLang();
   const onOff = (key, label, hint) => <Toggle checked={d[key]} onChange={v => update({ [key]: v })} label={label} hint={hint} />;
   return (
     <Modal title={t('set.title')} onClose={onClose} width={620} className="settings"
@@ -109,8 +109,6 @@ export function SettingsModal({ onClose }) {
         options={[{ value: 'auto', label: t('set.touch.auto') }, { value: 'on', label: t('set.touch.on') }, { value: 'off', label: t('set.touch.off') }]} />
       {onOff('vibrate', t('set.vibrate'))}
       {onOff('reduceMotion', t('set.calm'))}
-      <Segmented label={t('set.lang')} value={lang} onChange={setLang}
-        options={LANGS.map(code => ({ value: code, label: LANG_NAMES[code] }))} />
       <Text small muted>{t('set.keys')} <Keycap>←↑↓→</Keycap> <Keycap>WASD</Keycap> <Keycap>Space</Keycap> <Keycap>Shift</Keycap></Text>
     </Modal>
   );

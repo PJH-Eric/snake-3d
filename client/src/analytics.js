@@ -12,12 +12,13 @@ function cleanUrl(value) {
   try { const u = new URL(value); return /^https?:$/.test(u.protocol) ? u.origin + u.pathname : ''; } catch { return ''; }
 }
 
-function init(options) {
+/** host 只給測試用：預設為目前網頁的 hostname */
+export function init(options, host = location.hostname) {
   if (config || !options) return;
   const siteUrl = cleanUrl(options.page_location);
   if (!siteUrl || !/^[a-z0-9-]{1,40}$/.test(options.game_id || '')) return;
   config = { game_id: options.game_id, page_location: siteUrl };
-  if (location.hostname !== new URL(siteUrl).hostname || location.hostname !== 'pjh-eric.github.io' || !/^G-[A-Z0-9]+$/.test(options.measurement_id || '')) return;
+  if (host !== new URL(siteUrl).hostname || host !== 'pjh-eric.github.io' || !/^G-[A-Z0-9]+$/.test(options.measurement_id || '')) return;
   window.dataLayer = window.dataLayer || [];
   window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
   window.gtag('js', new Date());

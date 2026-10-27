@@ -114,6 +114,14 @@ t('吃蘋果 +10、慢慢長 2 節；金星 +30；發光果實 +5', () => {
   tick(s);
   assert.strictEqual(p.score, 45);
 });
+t('舞台主題：指定的編號照用，隨機時 12 種都會出現', () => {
+  assert.strictEqual(R.THEME_COUNT, 12);
+  assert.strictEqual(game(1, { themeId: 11 }).themeId, 11);
+  assert.strictEqual(game(1, { themeId: 14 }).themeId, 2, '超出範圍的編號取餘數');
+  const seen = new Set();
+  for (let seed = 1; seed <= 300; seed++) seen.add(game(1, { seed, themeId: -1 }).themeId);
+  assert.strictEqual(seen.size, 12);
+});
 t('一般果實有 8 種外觀，分數與成長都一樣', () => {
   const kinds = new Set();
   for (let seed = 1; seed <= 20; seed++) for (const f of game(2, { seed }).foods) if (f.type === 0) { assert(Number.isInteger(f.v) && f.v >= 0 && f.v < 8, '外觀編號超出範圍：' + f.v); kinds.add(f.v); }

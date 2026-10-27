@@ -6,6 +6,7 @@ import { Screen } from '../shell.jsx';
 import { app, confirmBox, toast } from '../app.js';
 import { net } from '../net.js';
 import { animalName, levelName, obstacleName, playerName, roomName, speedName, t, themeName, timeName, useLang } from '../i18n.js';
+import { THEME_OPTIONS } from '../data.js';
 import { inviteLink, isHost, leaveRoom, online, rematch, useOnline } from '../online.js';
 import * as sound from '../sound.js';
 import { useStatus } from './hooks.js';
@@ -170,7 +171,7 @@ export function RoomPage() {
               <Segmented label={t('rule.speed')} value={st.speed} onChange={v => patch({ speed: v })} options={Rules.SPEED_ORDER.map(v => ({ value: v, label: speedName(v), disabled: !host || !lobby }))} />
               <Segmented label={t('rule.obs')} value={st.obstacles} onChange={v => patch({ obstacles: v })} options={Rules.OBSTACLE_ORDER.map(v => ({ value: v, label: obstacleName(v), disabled: !host || !lobby }))} />
               <Segmented label={t('rule.time')} value={st.timeLimit} onChange={v => patch({ timeLimit: v })} options={Rules.TIME_LIMITS.map(v => ({ value: v, label: timeName(v), disabled: !host || !lobby }))} />
-              <Select label={t('rule.theme')} value={st.theme} disabled={!host || !lobby} onChange={v => patch({ theme: v })} options={[-1, 0, 1, 2, 3, 4, 5].map(v => ({ value: v, label: themeName(v) }))} />
+              <Select label={t('rule.theme')} value={st.theme} disabled={!host || !lobby} onChange={v => patch({ theme: v })} options={THEME_OPTIONS.map(v => ({ value: v, label: themeName(v) }))} />
               {host && lobby && <Stepper label={t('room.max')} value={room.max} min={2} max={8} onChange={v => patch({ max: v })} format={v => t('mk.n', { n: v })} />}
             </div>
           </Panel>

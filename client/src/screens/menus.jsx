@@ -7,7 +7,7 @@ import { go, myName } from '../app.js';
 import { getBest, update, useSave } from '../store.js';
 import { ANIMAL_IDS, animalName, levelHint, levelName, obstacleName, speedName, t, themeName, timeName, useLang } from '../i18n.js';
 import { pickAnimals, startChallenge, startSolo } from '../flow.js';
-import { SLOT_COLORS } from '../data.js';
+import { SLOT_COLORS, THEME_OPTIONS } from '../data.js';
 import { lobbyClick, lobbyUrl } from '../analytics.js';
 
 export function Profile({ onChange }) {
@@ -45,7 +45,7 @@ export function RulesPanel({ speed, obstacles, timeLimit, theme, hideTime, onCha
           options={Rules.TIME_LIMITS.map(v => ({ value: v, label: timeName(v) }))} />
       )}
       <Select label={t('rule.theme')} ariaLabel={t('rule.theme.aria')} value={theme} onChange={v => onChange('theme', v)}
-        options={[-1, 0, 1, 2, 3, 4, 5].map(v => ({ value: v, label: themeName(v) }))} />
+        options={THEME_OPTIONS.map(v => ({ value: v, label: themeName(v) }))} />
     </div>
   );
 }

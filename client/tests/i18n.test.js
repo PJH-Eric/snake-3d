@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import dicts from '../../shared/locales.json';
+import Rules from '../../shared/rules.js';
+import { THEMES } from '../src/data.js';
 import { autoName, getLang, roomName, serverMessage, setLang, t } from '../src/i18n.js';
 
 const params = s => [...s.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort().join(',');
@@ -12,6 +14,11 @@ describe('語系字典', () => {
     for (const k of zh) expect(params(dicts.en[k]), k).toBe(params(dicts['zh-Hant'][k]));
     expect(Object.keys(dicts['zh-Hans'])).toEqual(zh);
     for (const k of zh) expect(params(dicts['zh-Hans'][k]), k).toBe(params(dicts['zh-Hant'][k]));
+  });
+
+  it('每個舞台主題都有配色資料與三種語言的名稱', () => {
+    expect(THEMES.length).toBe(Rules.THEME_COUNT);
+    for (let i = 0; i < Rules.THEME_COUNT; i++) for (const l of ['zh-Hant', 'zh-Hans', 'en']) expect(dicts[l]['theme.' + i], l + ' theme.' + i).toBeTruthy();
   });
 
   describe('切換與保存', () => {
