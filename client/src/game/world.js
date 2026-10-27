@@ -561,7 +561,7 @@ export class World3D {
     let tx = this.popCache.get(text + color);
     if (!tx) { tx = popTexture(text, color); this.popCache.set(text + color, tx); }
     const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx.tex, depthTest: false, transparent: true }));
-    const h = big ? 1.5 : 1.1;
+    const h = big ? 0.8 : 0.55;
     sp.scale.set(h * tx.aspect * 0.01, h * 0.01, 1); sp.renderOrder = 11; sp.position.set(x, 1.2, z);
     this.scene.add(sp);
     this.pops.push({ sp, life: 0, h, aspect: tx.aspect });
