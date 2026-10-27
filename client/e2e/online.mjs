@@ -7,7 +7,7 @@ const shots = !!process.env.SHOTS;
 let fails = 0;
 const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) fails++; };
 const b = await launch();
-const base = APP + '?server=' + encodeURIComponent(SERVER);
+const base = APP + '?e2e=1&server=' + encodeURIComponent(SERVER);
 const btn = (p, name) => p.getByRole('button', { name }).first();
 const hasText = (p, text, timeout = 15000) => p.getByText(text, { exact: false }).first().waitFor({ timeout }).then(() => true, () => false);
 
@@ -36,13 +36,20 @@ ok(await hasText(host, '玩家席位'), '建立房間後進入房間畫面');
 await host.getByRole('button', { name: '加電腦' }).first().click();
 ok(await hasText(host, '電腦・'), '房主新增電腦席位');
 
+/* 斷線重連：連線被切斷後自動重連，仍在原房間、原席位 */
+await host.evaluate(() => window.__net.sock.close());
+ok(await hasText(host, '重新連線', 5000), '連線中斷顯示重新連線橫幅');
+ok(await hasText(host, '玩家席位', 15000) && await host.locator('.banner').count() === 0 || await host.waitForSelector('.banner', { state: 'detached', timeout: 15000 }).then(() => true, () => false), '自動重連成功，橫幅消失');
+ok(await host.getByText('你是房主').count() > 0, '重連後仍在原房間且仍是房主');
+
 /* 邀請連結：玩家與觀戰 */
 async function makeLink(role) {
   await btn(host, '邀請朋友').click();
   if (role === 'spectator') await host.getByRole('radio', { name: '觀戰者' }).click();
   else await host.getByRole('radio', { name: '玩家' }).click();
+  const before = await host.locator('.link-box').count();
   await btn(host, '產生連結').click();
-  await host.waitForSelector('.link-box');
+  await host.waitForFunction(n => document.querySelectorAll('.link-box').length > n, before);
   const links = await host.locator('.link-box').allTextContents();
   await host.keyboard.press('Escape');
   return links[links.length - 1];
@@ -63,7 +70,9 @@ await btn(guest, '我準備好了').click();
 await host.waitForTimeout(500);
 
 const spec = await newPage(b, SIZES.phoneP, 'zh-TW', specLink);
-ok(await hasText(spec, '以觀戰者加入'), '觀戰邀請顯示「以觀戰者加入」');
+const specOk = await hasText(spec, '以觀戰者加入');
+if (!specOk) console.log('   [debug]', specLink, (await spec.locator('body').innerText()).slice(0, 300).replace(/\s+/g, ' '));
+ok(specOk, '觀戰邀請顯示「以觀戰者加入」');
 await btn(spec, '進去觀戰').click();
 ok(await hasText(spec, '你是觀戰者'), '觀戰者角色明確顯示');
 ok(await spec.getByRole('button', { name: '加入對戰' }).first().isEnabled(), '大廳階段觀戰者可選擇加入對戰');

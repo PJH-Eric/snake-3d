@@ -5,6 +5,7 @@ import { useSave } from './store.js';
 import { bootInvite, initOnline } from './online.js';
 import { installUnlock, music } from './sound.js';
 import { useLang } from './i18n.js';
+import { net } from './net.js';
 import { ChallengePage, HelpPage, HomePage, SoloPage } from './screens/menus.jsx';
 import { LobbyPage } from './screens/lobby.jsx';
 import { RoomPage } from './screens/room.jsx';
@@ -17,6 +18,7 @@ function boot() {
   installUnlock();
   initOnline();
   bootInvite();
+  if (new URLSearchParams(location.search).has('e2e')) window.__net = net;   /* e2e 才會用到：模擬斷線 */
 }
 
 export default function App() {
