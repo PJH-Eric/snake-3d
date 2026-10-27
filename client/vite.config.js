@@ -12,5 +12,5 @@ export default defineConfig({
   resolve: { alias: { '@shared': shared } },
   server: { port: 5173, fs: { allow: ['..'] } },
   build: { target: 'es2020', chunkSizeWarningLimit: 900 },
-  test: { environment: 'jsdom', include: ['tests/**/*.test.js'], globals: false }
+  test: { environment: 'jsdom', setupFiles: ['./tests/setup.js'], include: ['tests/**/*.test.js'], globals: false }
 });

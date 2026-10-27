@@ -8,7 +8,7 @@
 
 ## 快速開始
 
-需要 Node.js 22 以上。
+需要 Node.js 26.12.1 或更新的 26.x 修補版本。
 
 ```
 npm run install:all          # 安裝前端套件（後端沒有第三方套件）
@@ -57,7 +57,7 @@ SHOT_DIR=./shots SHOTS=1 npm run e2e              # 尺寸矩陣（手機／平�
 ## 部署（預設拓撲）
 
 - **前端 → GitHub Pages**：`.github/workflows/pages.yml` 在 push 到 `main` 時測試、建置並部署 `client/dist`。在 repository 設定 Actions variable `GAME_SERVER_URL`（Render 後端的 HTTPS 網址）。
-- **後端 → Render**：`render.yaml`（Blueprint，`region: singapore`，Node 22）。在 Render 服務設定 `GAME_ALLOWED_ORIGIN` 為 Pages 網址（例如 `https://<帳號>.github.io`）。健康檢查 `/health`。
+- **後端 → Render**：`render.yaml`（Blueprint，`region: singapore`，Node 26.12.1）。在 Render 服務設定 `GAME_ALLOWED_ORIGIN` 為 Pages 網址（例如 `https://<帳號>.github.io`）。健康檢查 `/health`。
   - Render 免費層會休眠：進入線上流程時前端會先輪詢 `/health` 喚醒再連線；連不上超過 30 秒會提示。房間只存在記憶體，服務重啟後會消失。
   - Render 不支援修改既有服務的 region，更新 Blueprint 不會搬遷已建立的服務；要搬遷請建立新服務、複製環境變數，確認 `/health` 與線上對局可用後，再更新 `GAME_SERVER_URL` 並停用舊服務。
 - 本專案不會自動 push、建立雲端服務或設定網域。

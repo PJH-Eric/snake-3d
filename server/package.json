@@ -5,7 +5,7 @@
   "description": "3D 貪吃蛇的權威房間伺服器（Node.js）",
   "license": "UNLICENSED",
   "engines": {
-    "node": ">=22"
+    "node": "^26.12.1"
   },
   "scripts": {
     "start": "node server.js",

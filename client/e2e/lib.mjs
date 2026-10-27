@@ -30,6 +30,8 @@ export async function newPage(browser, size, lang = 'zh-TW', url = APP) {
 
 /** 回傳目前畫面的版面問題：水平溢出、元素超出視窗、按鈕／晶片文字被截斷。 */
 export async function layoutIssues(page) {
+  /* 進場動畫（抽屜滑入、倒數彈跳）進行中會量到暫態位置，先等有限動畫結束再量 */
+  await page.evaluate(() => Promise.all(document.getAnimations().filter(a => Number.isFinite(a.effect?.getComputedTiming().endTime)).map(a => a.finished.catch(() => {}))));
   return page.evaluate(() => {
     const issues = [];
     const vw = window.innerWidth, vh = window.innerHeight;
