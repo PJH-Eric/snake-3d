@@ -80,7 +80,8 @@ try {
       }
       const box = await page.locator('.stick').boundingBox();
       const main = await page.locator('.game-main').boundingBox();
-      assert.ok(box && Math.abs(main.y + main.height - box.y - box.height - 26) < 2, '搖桿固定在底部安全距離');
+      const bottomGap = main.y + main.height - box.y - box.height;
+      assert.ok(box && bottomGap >= 12 && bottomGap <= 30, '搖桿固定在底部安全距離');
       assert.ok(side === 'left' ? box.x < main.x + main.width / 2 : box.x > main.x + main.width / 2, '搖桿左右位置正確');
       await aim(page, Math.PI / 4);
       await touch(cdp, 'touchStart', [point]);

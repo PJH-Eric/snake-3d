@@ -141,7 +141,7 @@ export function Modal({ title, onClose, children, width = 560, dismissible = tru
         {title && (
           <div className="modal-head">
             <h2 id={titleId} className="modal-title">{title}</h2>
-            {dismissible && onClose && <IconButton icon="close" label={t('common.close')} onClick={onClose} variant="paper" size={44} />}
+            {dismissible && onClose && <IconButton icon="close" label={t('common.close')} onClick={onClose} variant="paper" size={48} />}
           </div>
         )}
         <ScrollArea className="modal-scroll"><div className="modal-body">{children}</div></ScrollArea>

@@ -191,6 +191,7 @@ export function GamePage({ params }) {
   const unread = useOnline(s => s.unread);
   const vp = useViewport();
   const canvasRef = useRef(null), mainRef = useRef(null), stickRef = useRef(null), knobRef = useRef(null);
+  const hudRef = useRef(null), boostRef = useRef(null);
   const [session, setSession] = useState(null);
   const [error, setError] = useState(false);
   const [result, setResult] = useState(null);
@@ -291,16 +292,31 @@ export function GamePage({ params }) {
   }, [wide]);
   useEffect(() => { if (sideOpen) clearUnread(); }, [sideOpen, unread]);
 
-  const compact = mainW < 700;
+  const short = vp.w > vp.h && vp.h < 500;
+  const compact = mainW < 700 || short;
   const me = hud && hud.me;
   const canSteer = !!hud && hud.slot >= 0 && hud.phase !== 'over' && !!me && me.alive;
   const touchOn = canSteer && (save.controlMode === 'joystick' || sawTouch || coarse());
   const portrait = vp.h > vp.w;
   useEffect(() => {
-    if (!session) return;
-    session.safeTop = (compact ? 130 : 64);
-    session.safeBottom = touchOn && portrait ? Math.min(150, vp.h * 0.16) : 0;
-  }, [session, compact, touchOn, portrait, vp.h]);
+    if (!session || !mainRef.current) return;
+    const measure = () => {
+      const node = mainRef.current;
+      if (!node) return;
+      const main = node.getBoundingClientRect();
+      const header = hudRef.current?.getBoundingClientRect();
+      session.safeTop = Math.max(64, header ? header.bottom - main.top + 12 : 64);
+      const controls = [boostRef.current, save.controlMode === 'joystick' ? stickRef.current : null];
+      session.safeBottom = touchOn && portrait ? Math.max(0, ...controls.map(node => {
+        const rect = node?.getBoundingClientRect();
+        return rect?.height > 0 ? main.bottom - rect.top + 8 : 0;
+      })) : 0;
+    };
+    const observer = new ResizeObserver(measure);
+    if (hudRef.current) observer.observe(hudRef.current);
+    measure();
+    return () => observer.disconnect();
+  }, [session, hud?.slot, compact, short, touchOn, portrait, mainW, vp.h, save.controlMode]);
   useEffect(() => { if (!touchOn && session) { session.setBoostTouch(false); } }, [touchOn, session]);
 
   /* ---------- 搖桿 ---------- */
@@ -324,13 +340,14 @@ export function GamePage({ params }) {
     if (e.pointerType !== 'mouse') setSawTouch(true);
     if (!canSteer || stick.current || isModalOpen()) return;
     if (e.pointerType === 'mouse' && save.controlMode !== 'joystick') return;
-    let ox = e.clientX, oy = e.clientY;
+    let ox = e.clientX, oy = e.clientY, max = 56;
     if (save.controlMode === 'joystick') {
       const r = stickRef.current.getBoundingClientRect();
       ox = r.left + r.width / 2; oy = r.top + r.height / 2;
       if (Math.hypot(e.clientX - ox, e.clientY - oy) > r.width / 2 + 18) return;
+      max = Math.max(0, (stickRef.current.clientWidth - knobRef.current.offsetWidth) / 2);
     }
-    stick.current = { id: e.pointerId, ox, oy, mode: save.controlMode, x: e.clientX, y: e.clientY };
+    stick.current = { id: e.pointerId, ox, oy, max, mode: save.controlMode, x: e.clientX, y: e.clientY };
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* 合成事件沒有可捕捉的指標 */ }
     padMove(e);
   };
@@ -343,7 +360,7 @@ export function GamePage({ params }) {
       if (angle != null) session.aim(angle);
       return;
     }
-    const dx = e.clientX - s.ox, dy = e.clientY - s.oy, L = Math.hypot(dx, dy), max = 56;
+    const dx = e.clientX - s.ox, dy = e.clientY - s.oy, L = Math.hypot(dx, dy), max = s.max;
     const k = L > max ? max / L : 1;
     if (knobRef.current) knobRef.current.style.transform = `translate(${dx * k}px,${dy * k}px)`;
     if (L > 8 && session) session.aim(Math.atan2(dy / TILT, dx));
@@ -374,7 +391,7 @@ export function GamePage({ params }) {
   const spectating = hud && hud.slot < 0 && hud.phase !== 'over';
 
   return (
-    <div className="game" style={{ '--sky-bg': '#cdeefa' }}>
+    <div className={'game' + (short ? ' game-short' : '')} style={{ '--sky-bg': '#cdeefa' }}>
       {sideVisible && wide && <SidePanel hud={hud} kind={kind} onClose={() => setSideOpen(false)} onMenu={openMenu} onWatch={s => session.setWatch(s)} />}
       <div className="game-main" ref={mainRef}>
         <canvas ref={canvasRef} className="game-canvas" tabIndex={-1} role="img" aria-label={t('game.stage')} />
@@ -384,7 +401,7 @@ export function GamePage({ params }) {
           <div className={'stick ' + save.stickSide} ref={stickRef} style={{ display: touchOn && save.controlMode === 'joystick' ? 'block' : 'none' }} role="img" aria-label={t('stick.aria')}><div className="stick-knob" ref={knobRef} /></div>
         </div>
         {touchOn && (
-          <div className={'boost ' + (save.stickSide === 'right' ? 'left' : 'right')}>
+          <div ref={boostRef} className={'boost ' + (save.stickSide === 'right' ? 'left' : 'right')}>
             <div className={'boost-ring ' + (me.tired ? 'tired' : '')} style={{ '--e': energy }} />
             <PressHold className="boost-core" label={t('boost.aria')} onChange={on => { if (session) session.setBoostTouch(on); if (on) sound.sfx('boost'); }}>
               <Icon name="flash" size={34} /><span>{t('boost.label')}</span>
@@ -399,7 +416,7 @@ export function GamePage({ params }) {
           </div>
         )}
         {hud && (
-          <div className={'hud-top ' + (compact ? 'compact' : '')} role="status" aria-label={t('game.time')}>
+          <div ref={hudRef} className={'hud-top ' + (compact ? 'compact ' : '') + (short ? 'short' : '')} role="status" aria-label={t('game.time')}>
             <span className="hud-pill hud-timer">{challenge ? clock(hud.time) : remain != null ? clock(remain) : clock(hud.time)}</span>
             {challenge && me ? (
               <>
@@ -407,19 +424,21 @@ export function GamePage({ params }) {
                 <span className="hud-pill hud-chip">{t('chip.len')} {me.len}</span>
                 <span className="hud-pill hud-chip">{t('chip.lv')} {1 + Math.floor(me.eaten / 5)}</span>
               </>
-            ) : (compact ? chipList(hud) : hud.players).map(p => {
+            ) : (compact ? chipList(hud, 1) : hud.players).map(p => {
               const pick = canWatchHud(hud) && p.alive && p.slot !== hud.slot;
               const Chip2 = pick ? 'button' : 'span';
               return (
                 <Chip2 key={p.slot} type={pick ? 'button' : undefined} className={'hud-pill hud-chip ' + (p.slot === hud.slot ? 'me ' : '') + (!p.alive ? 'out ' : '') + (pick ? 'pick ' : '') + (pick && hud.watch === p.slot ? 'fol' : '')}
                   aria-pressed={pick ? hud.watch === p.slot : undefined} onClick={pick ? () => session.setWatch(p.slot) : undefined}>
-                  <i style={{ background: slotColor(p.slot) }} />{slotName(p)}{p.slot === hud.slot ? t('res.youTag') : ''} {p.score}
+                  <i style={{ background: slotColor(p.slot) }} />
+                  <span className="hud-name" title={slotName(p)}>{compact && p.slot === hud.slot ? t('res.youTag') : slotName(p) + (p.slot === hud.slot ? t('res.youTag') : '')}</span>
+                  <span className="hud-score">{p.score}</span>
                 </Chip2>
               );
             })}
           </div>
         )}
-        {session && save.minimap && <MiniMap session={session} size={compact ? 92 : 132} />}
+        {session && save.minimap && <MiniMap session={session} size={short ? 72 : compact ? 84 : 132} />}
         {hud && hud.flash && hud.phase !== 'over' && <FlashCount key={hud.flash.id} flash={hud.flash} />}
         {hud && me && me.alive && !touchOn && (
           <div className="energy" role="progressbar" aria-label={t('game.energy')} aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(energy * 100)}>
@@ -451,9 +470,9 @@ function canWatchHud(hud) {
 }
 
 /** 窄版只顯示自己與分數最高的幾位，其餘在資訊欄 */
-function chipList(hud) {
+function chipList(hud, otherCount) {
   const me = hud.players.filter(p => p.slot === hud.slot);
-  const others = hud.players.filter(p => p.slot !== hud.slot).sort((a, b) => b.score - a.score).slice(0, 3 - me.length + 1);
+  const others = hud.players.filter(p => p.slot !== hud.slot).sort((a, b) => b.score - a.score).slice(0, otherCount);
   return [...me, ...others];
 }
 

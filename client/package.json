@@ -9,7 +9,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "test": "vitest run",
-    "e2e": "node e2e/matrix.mjs && node e2e/touch.mjs && node e2e/control-methods.mjs && node e2e/flow.mjs && node e2e/online.mjs",
+    "e2e": "node e2e/matrix.mjs && node e2e/touch.mjs && node e2e/control-methods.mjs && node e2e/mobile-layout.mjs && node e2e/flow.mjs && node e2e/online.mjs",
     "leak": "node e2e/leak.mjs 12"
   },
   "dependencies": {
