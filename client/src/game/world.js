@@ -304,9 +304,13 @@ export class World3D {
   buildRock(grp, d, k) {
     const g = this.geo;
     /* 所有主題統一的石頭配色：深色底影＋灰色石身，任何地圖一眼認得出來 */
-    this.part(grp, g.sphere, this.mat('#4f565e'), [0, 0.03, 0], [d * 1.08, d * 0.12, d * 1.08]);
-    this.part(grp, g.sphere, this.mat('#a3a9b1'), [0, d * 0.32, 0], [d, d * 0.72, d], [0, k[0] * 40, 0]);
-    this.part(grp, g.sphere, this.mat('#7f868f'), [d * 0.22, d * 0.2, d * 0.18], [d * 0.55, d * 0.4, d * 0.5]);
+    this.part(grp, g.sphere, this.mat('#2f343a'), [0, 0.03, 0], [d * 1.18, d * 0.12, d * 1.18]);
+    /* 深色描邊外殼（只畫背面）：讓石頭輪廓在任何地面上都清楚 */
+    if (!this.rockOutline) this.rockOutline = this.own(new THREE.MeshBasicMaterial({ color: 0x232830, side: THREE.BackSide }));
+    this.part(grp, g.sphere, this.rockOutline, [0, d * 0.36, 0], [d * 1.1, d * 0.9, d * 1.1], [0, k[0] * 40, 0], false);
+    this.part(grp, g.sphere, this.mat('#b4bac2', 0.18), [0, d * 0.36, 0], [d, d * 0.82, d], [0, k[0] * 40, 0]);
+    this.part(grp, g.sphere, this.mat('#868d96', 0.12), [d * 0.24, d * 0.24, d * 0.2], [d * 0.55, d * 0.42, d * 0.5]);
+    this.part(grp, g.sphere, this.mat('#e3e7ec', 0.3), [-d * 0.12, d * 0.68, -d * 0.08], [d * 0.34, d * 0.2, d * 0.34]);
   }
 
   buildFoods() {
