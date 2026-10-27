@@ -8,10 +8,9 @@
  *   普通    看得遠，挑「划算」的果實（金星、發光果實），會躲別人頭的去路，看到金星會加速
  *   困難    看得最遠、想得最勤，會搶別人搶不到的果實、繞到比自己短的蛇前面攔截、危險時加速逃開
  */
-(function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory(require('./rules.js'));
-  else root.AI = factory(root.Rules);
-})(typeof self !== 'undefined' ? self : this, function (R) {
+import R from './rules.js';
+
+const AI = (function () {
   'use strict';
 
   const LEVEL_ORDER = ['toddler', 'easy', 'normal', 'hard'];
@@ -166,4 +165,6 @@
   }
 
   return { LEVELS, LEVEL_ORDER, createBrain, think, drive };
-});
+})();
+
+export default AI;

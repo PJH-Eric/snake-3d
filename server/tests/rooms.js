@@ -1,8 +1,7 @@
 /* ===== tests/rooms.js — 房間生命週期、邀請、席位權限（不開網路，用假時鐘） ===== */
-'use strict';
-const assert = require('assert');
-const { createHub, cleanName } = require('../lib/rooms.js');
-const Rules = require('../public/js/rules.js');
+import assert from 'node:assert';
+import { createHub, cleanName } from '../lib/rooms.js';
+import Rules from '../../shared/rules.js';
 
 let passed = 0;
 const failed = [];
@@ -262,7 +261,7 @@ test('中途進來的觀戰者拿到完整果實清單，之後的差異與其�
   x.join('dddddddd4', 'D');
   x.hub.handle('dddddddd4', { type: 'join', room: id, as: 'spectator', name: 'D' });
   x.run(2000);
-  const R = require('../public/js/rules.js');
+  const R = Rules;
   const build = key => {
     const v = R.viewFromStart(x.last(key, 'start').game);
     const snaps = x.all(key, 'snap');

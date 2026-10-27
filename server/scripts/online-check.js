@@ -1,6 +1,5 @@
 /* 線上端對端檢查：真的啟動 server.js，用 Node 內建 WebSocket 連線，驗證房間、邀請、觀戰、對局與零真人自動關閉。 */
-'use strict';
-const { createServer } = require('../server.js');
+import { createServer } from '../server.js';
 let fails = 0;
 const ok = (c, m) => { console.log((c ? '  ✓ ' : '  ✗ ') + m); if (!c) fails++; };
 const wait = ms => new Promise(r => setTimeout(r, ms));

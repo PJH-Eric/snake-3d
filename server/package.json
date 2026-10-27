@@ -1,0 +1,16 @@
+{
+  "name": "snake-3d-server",
+  "private": true,
+  "version": "1.0.0",
+  "description": "3D 貪吃蛇的權威房間伺服器（Node.js）",
+  "license": "UNLICENSED",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "start": "node server.js",
+    "test": "node tests/verify.js && node tests/rooms.js && node scripts/online-check.js"
+  },
+  "dependencies": {},
+  "type": "module"
+}

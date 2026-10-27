@@ -1,24 +1,25 @@
-/* ===== server.js — 靜態檔案 ＋ 房間伺服器（零依賴） =====
+/* ===== server.js — 房間伺服器（Node.js，無第三方套件） =====
  *
- * 靜態檔案用 Node 內建 http，連線用 lib/ws.js（原生 WebSocket），
- * 整個專案不需要 npm install：雙擊「啟動遊戲.bat」就能玩，丟到 Render 也一樣。
+ * HTTP 只提供 /health 與（若已建置）前端靜態檔；連線用 lib/ws.js（原生 WebSocket）。
  *
  *   lib/rooms.js   房間、席位、觀戰、邀請、聊天、權威對局（純邏輯）
  *   這一支          HTTP、WebSocket、訊息分派與廣播
  *
- * 環境變數：PORT（預設 3130）、GAME_ALLOWED_ORIGIN（前端來源，預設 *）
+ * 環境變數：PORT（預設 3130）、GAME_ALLOWED_ORIGIN（前端來源，逗號分隔；留空＝不限制，僅限本機開發）
+ * 不提供任何「線上人數」端點：前端不會也不需要持續輪詢後端。
  */
-'use strict';
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import os from 'node:os';
+import { fileURLToPath } from 'node:url';
 
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const os = require('os');
+import * as ws from './lib/ws.js';
+import { createHub } from './lib/rooms.js';
 
-const ws = require('./lib/ws.js');
-const { createHub } = require('./lib/rooms.js');
-
-const ROOT = path.join(__dirname, 'public');
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+/* 本機單進程試玩：npm run build 之後，後端順便把 client/dist 發出去；Render 只跑 API 時這個資料夾不存在，回 404 */
+const ROOT = path.resolve(HERE, process.env.GAME_STATIC_DIR || '../client/dist');
 const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8',
   '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png', '.ico': 'image/x-icon',
@@ -57,7 +58,6 @@ function createServer(opt) {
     try { urlPath = decodeURIComponent((req.url || '/').split('?')[0]); } catch (e) { res.writeHead(400); res.end(); return; }
     if (req.method === 'OPTIONS') { cors(req, res); res.writeHead(204); res.end(); return; }
     if (urlPath === '/health') { json(req, res, 200, { ok: true, game: 'snake-3d', uptime: Math.round(process.uptime()) }); return; }
-    if (urlPath === '/api/presence') { json(req, res, 200, hub.stats()); return; }
     if (urlPath === '/') urlPath = '/index.html';
     const file = path.normalize(path.join(ROOT, urlPath));
     if (file.indexOf(ROOT) !== 0) { res.writeHead(403); res.end('forbidden'); return; }
@@ -117,7 +117,7 @@ function lanAddress() {
   return null;
 }
 
-if (require.main === module) {
+if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const PORT = Number(process.env.PORT) || 3130;
   const { server } = createServer();
   server.on('error', e => {
@@ -132,4 +132,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createServer };
+export { createServer };

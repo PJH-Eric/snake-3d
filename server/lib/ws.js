@@ -6,9 +6,7 @@
  * 支援：文字訊息（含 16/64 bit 長度）、分段續傳、ping/pong、close。
  * 不支援：permessage-deflate 壓縮、二進位訊息（用不到）。
  */
-'use strict';
-
-const crypto = require('crypto');
+import crypto from 'node:crypto';
 const GUID = '258EAFA5-E914-47DA-95CA-C5AB0DC85B11';
 
 function accept(key) {
@@ -185,4 +183,4 @@ function attach(server, opt) {
   });
 }
 
-module.exports = { attach, Socket, frame, accept };
+export { attach, Socket, frame, accept };

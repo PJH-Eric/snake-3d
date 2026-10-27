@@ -1,8 +1,7 @@
 /* ===== tests/verify.js — 規則核心、電腦對手與快照的單元測試（node tests/verify.js） ===== */
-'use strict';
-const assert = require('assert');
-const R = require('../public/js/rules.js');
-const AI = require('../public/js/ai.js');
+import assert from 'node:assert';
+import R from '../../shared/rules.js';
+import AI from '../../shared/ai.js';
 
 let passed = 0, failed = 0;
 function t(name, fn) {

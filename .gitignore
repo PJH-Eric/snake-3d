@@ -68,3 +68,7 @@ GameCheck~/InputTests/obj/
 !GameCheck~/InputTests/InputTests.csproj
 Backend~/node_modules/
 Backend~/*.log
+
+node_modules/
+client/dist/
+.env

@@ -8,10 +8,7 @@
  * 快照：startInfo → viewFromStart → applySnapshot；畫面端只讀 view，不跑規則。
  * 角度：0 = 世界 +x（畫面右），PI/2 = 世界 +z（畫面下）。
  */
-(function (root, factory) {
-  if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.Rules = factory();
-})(typeof self !== 'undefined' ? self : this, function () {
+const Rules = (function () {
   'use strict';
 
   const DT = 1 / 30;
@@ -500,4 +497,6 @@
     rng, wrapAng, arenaFor, radiusFor, turnRate, selfSkip, createGame, aim, steer: aim, setBoost, step, removePlayer,
     buildGrid, nearPts, startInfo, snapshot, viewFromStart, applySnapshot, playerBySlot, encPts, decPts
   };
-});
+})();
+
+export default Rules;

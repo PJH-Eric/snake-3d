@@ -8,10 +8,8 @@
  *   - 真人降到 0 → 立刻關閉：邀請失效、對局計時器與電腦停止、廣播 closed、從大廳移除
  *   - 已關閉的房間不會因為重新連線而復活
  */
-'use strict';
-
-const Rules = require('../public/js/rules.js');
-const AI = require('../public/js/ai.js');
+import Rules from '../../shared/rules.js';
+import AI from '../../shared/ai.js';
 
 const ANIMALS = ['cat', 'dog', 'bunny', 'bear', 'panda', 'fox', 'frog', 'penguin'];
 const ANIMAL_NAMES = { cat: '小貓', dog: '小狗', bunny: '小兔', bear: '小熊', panda: '熊貓', fox: '狐狸', frog: '青蛙', penguin: '企鵝' };
@@ -569,4 +567,4 @@ function createHub(opt) {
   };
 }
 
-module.exports = { createHub, cleanName, cleanText, ANIMALS, ANIMAL_NAMES };
+export { createHub, cleanName, cleanText, ANIMALS, ANIMAL_NAMES };
