@@ -68,6 +68,7 @@ function makeSfx(name) {
     case 'lose': seq([440, 392, 349, 294], 0.16, 0.3, 'sine', 0.35); break;
     case 'draw': seq([523, 523, 392], 0.14, 0.26, 'triangle', 0.35); break;
     case 'join': b.tone(660, 0, 0.1, 'sine', 0.25); b.tone(880, 0.08, 0.14, 'sine', 0.25); break;
+    case 'bump': b.tone(190, 0, 0.1, 'sine', 0.3, 110); b.noise(0, 0.06, 0.12, false); break;
     case 'chat': b.tone(980, 0, 0.06, 'sine', 0.15); break;
     default: return null;
   }

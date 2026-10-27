@@ -1,13 +1,14 @@
 import { useMemo, useState } from 'react';
 import AI from '@shared/ai.js';
 import Rules from '@shared/rules.js';
-import { AnimalFace, Button, Chip, Heading, Keycap, Panel, RadioCard, Row, Segmented, Select, Stack, Stepper, Text, TextField } from '../ui/kit.jsx';
+import { AnimalFace, Button, Chip, Heading, Icon, Keycap, Panel, RadioCard, Row, Segmented, Select, Stack, Stepper, Text, TextField } from '../ui/kit.jsx';
 import { Screen } from '../shell.jsx';
 import { go, myName } from '../app.js';
 import { getBest, update, useSave } from '../store.js';
 import { ANIMAL_IDS, animalName, levelHint, levelName, obstacleName, speedName, t, themeName, timeName, useLang } from '../i18n.js';
 import { pickAnimals, startChallenge, startSolo } from '../flow.js';
 import { SLOT_COLORS } from '../data.js';
+import { lobbyClick, lobbyUrl } from '../analytics.js';
 
 export function Profile({ onChange }) {
   const d = useSave();
@@ -65,6 +66,7 @@ export function HomePage() {
         <h1 className="hd hd-1" aria-label={t('app.title')}>
           {title.map((c, i) => <span key={i} aria-hidden="true" style={{ color: SLOT_COLORS[i % 7], WebkitTextStroke: '2px #4a3320', paintOrder: 'stroke fill' }}>{c}</span>)}
         </h1>
+        <a className="lobby-link" href={lobbyUrl()} onClick={lobbyClick}><Icon name="back" size={18} /><span>{t('home.lobby')}</span></a>
         <Text className="home-sub">{t('home.sub')}</Text>
         <Row justify="center" gap={6}>{ANIMAL_IDS.map(id => <AnimalFace key={id} animal={id} size={56} />)}</Row>
         <nav className="home-menu" aria-label={t('home.menu')}>

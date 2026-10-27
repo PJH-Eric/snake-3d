@@ -6,6 +6,7 @@ import { bootInvite, initOnline } from './online.js';
 import { installUnlock, music } from './sound.js';
 import { useLang } from './i18n.js';
 import { net } from './net.js';
+import { pageView } from './analytics.js';
 import { ChallengePage, HelpPage, HomePage, SoloPage } from './screens/menus.jsx';
 import { LobbyPage } from './screens/lobby.jsx';
 import { RoomPage } from './screens/room.jsx';
@@ -29,6 +30,7 @@ export default function App() {
   useEffect(boot, []);
   useEffect(() => { document.documentElement.classList.toggle('reduce-motion', !!save.reduceMotion); }, [save.reduceMotion]);
   useEffect(() => { if (screen !== 'game') music('menu'); }, [screen]);
+  useEffect(() => { pageView(screen || 'home'); }, [screen]);
 
   let page;
   switch (screen) {

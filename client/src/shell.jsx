@@ -1,8 +1,9 @@
 /* 共用外框：畫面容器、右上角設定＋語言、設定視窗、連線橫幅與確認視窗。 */
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, ConfirmModal, IconButton, Keycap, Modal, ScrollArea, Segmented, Slider, Text, Toggle, ToastHost, Heading, Spinner } from './ui/kit.jsx';
 import { app, closeConfirm, useApp } from './app.js';
-import { getLang, setLang, t, useLang } from './i18n.js';
+import { LANGS, LANG_NAMES, getLang, setLang, t, useLang } from './i18n.js';
+import * as sound from './sound.js';
 import { resetSettings, update, useSave } from './store.js';
 import { toast } from './app.js';
 
@@ -28,15 +29,53 @@ export function Screen({ title, onBack, backLabel, children, width = 880, action
   );
 }
 
+const LANG_BADGE = { 'zh-Hant': '繁', 'zh-Hans': '简', en: 'EN' };
+
+/** 語言選單：地球鈕＋目前語言徽章，點開後列出全部語言（↑↓ 移動、Esc 關閉、點外面關閉）。 */
+function LangMenu() {
+  const lang = useLang();
+  const [open, setOpen] = useState(false);
+  const wrap = useRef(null);
+  const btn = useRef(null);
+  const close = focus => { setOpen(false); if (focus) btn.current && btn.current.focus(); };
+  useEffect(() => {
+    if (!open) return undefined;
+    const onDoc = e => { if (wrap.current && !wrap.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('pointerdown', onDoc, true);
+    wrap.current.querySelector('[aria-checked="true"]').focus();
+    return () => document.removeEventListener('pointerdown', onDoc, true);
+  }, [open]);
+  const onKey = (e, i) => {
+    const items = wrap.current.querySelectorAll('[role="menuitemradio"]');
+    const go = n => { e.preventDefault(); items[(n + items.length) % items.length].focus(); };
+    e.stopPropagation();
+    if (e.key === 'ArrowDown') go(i + 1);
+    else if (e.key === 'ArrowUp') go(i - 1);
+    else if (e.key === 'Escape') { e.preventDefault(); close(true); }
+    else if (e.key === 'Tab') setOpen(false);
+  };
+  return (
+    <div className="langmenu" ref={wrap}>
+      <IconButton icon="globe" variant="paper" className="langbtn" badge={LANG_BADGE[lang]} buttonRef={btn}
+        label={t('lang.switch') + '：' + LANG_NAMES[lang]} onClick={() => setOpen(o => !o)} />
+      {open && (
+        <div className="langpop" role="menu" aria-label={t('lang.switch')}>
+          {LANGS.map((code, i) => (
+            <button key={code} type="button" role="menuitemradio" aria-checked={code === lang} lang={code} className={'langopt ' + (code === lang ? 'cur' : '')}
+              onKeyDown={e => onKey(e, i)} onClick={() => { sound.sfx('click'); setLang(code); close(true); }}>{LANG_NAMES[code]}</button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TopRight() {
   const [open, setOpen] = useState(false);
-  const lang = useLang();
-  const next = lang === 'zh-TW' ? 'en' : 'zh-TW';
   return (
     <>
       <div className="topright">
-        <IconButton icon="globe" variant="paper" className="langbtn" text={lang === 'zh-TW' ? 'EN' : '中文'} lang={next}
-          label={t('lang.switch') + '：' + t('lang.' + next)} onClick={() => setLang(next)} />
+        <LangMenu />
         <IconButton icon="settings" label={t('set.title')} onClick={() => setOpen(true)} variant="orange" />
       </div>
       {open && <SettingsModal onClose={() => setOpen(false)} />}
@@ -71,7 +110,7 @@ export function SettingsModal({ onClose }) {
       {onOff('vibrate', t('set.vibrate'))}
       {onOff('reduceMotion', t('set.calm'))}
       <Segmented label={t('set.lang')} value={lang} onChange={setLang}
-        options={[{ value: 'zh-TW', label: t('lang.zh-Hant') }, { value: 'en', label: t('lang.en') }]} />
+        options={LANGS.map(code => ({ value: code, label: LANG_NAMES[code] }))} />
       <Text small muted>{t('set.keys')} <Keycap>←↑↓→</Keycap> <Keycap>WASD</Keycap> <Keycap>Space</Keycap> <Keycap>Shift</Keycap></Text>
     </Modal>
   );

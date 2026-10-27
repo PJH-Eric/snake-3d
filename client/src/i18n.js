@@ -1,31 +1,47 @@
 import dicts from '@shared/locales.json';
 import { useSyncExternalStore } from 'react';
 
-export const LANGS = ['zh-TW', 'en'];
-const KEY = 'snake3d.lang';
-let lang = 'zh-TW';
+export const LANGS = ['zh-Hant', 'zh-Hans', 'en'];
+export const LANG_NAMES = { 'zh-Hant': '繁體中文', 'zh-Hans': '简体中文', en: 'English' };
+const DEFAULT = 'zh-Hant';
+/* 與其他遊戲共用同一個 key，同一來源下語言偏好互通；舊版 key 讀到時沿用一次 */
+const KEY = 'game-island-lang';
+const LEGACY_KEY = 'snake3d.lang';
+let lang = DEFAULT;
 const subs = new Set();
 
+function normalize(v) {
+  if (!v) return null;
+  v = String(v).toLowerCase().replace(/_/g, '-');
+  if (v === 'en' || v.startsWith('en-')) return 'en';
+  if (v.startsWith('zh')) return /^zh-(hans|cn|sg)/.test(v) ? 'zh-Hans' : 'zh-Hant';
+  return null;
+}
+
+/* 語言決定順序：網址 ?lang= → localStorage → 繁中 */
 function detect() {
-  try {
-    const saved = localStorage.getItem(KEY);
-    if (LANGS.includes(saved)) return saved;
-  } catch { /* 無法讀取就用預設 */ }
-  return 'zh-TW';
+  try { const q = normalize(new URLSearchParams(location.search).get('lang')); if (q) return q; } catch { /* 沒有網址就略過 */ }
+  try { const saved = normalize(localStorage.getItem(KEY) || localStorage.getItem(LEGACY_KEY)); if (saved) return saved; } catch { /* 無法讀取就用預設 */ }
+  return DEFAULT;
 }
 lang = detect();
 
 function sync() {
   if (typeof document === 'undefined') return;
-  document.documentElement.lang = lang === 'en' ? 'en' : 'zh-TW';
+  document.documentElement.lang = lang;
   document.title = t('meta.title');
 }
 
 export function getLang() { return lang; }
 export function setLang(next) {
-  if (!LANGS.includes(next) || next === lang) return;
+  next = normalize(next);
+  if (!next || next === lang) return;
   lang = next;
   try { localStorage.setItem(KEY, next); } catch { /* 儲存失敗不影響遊戲 */ }
+  try {
+    const u = new URL(location.href);
+    if (u.searchParams.has('lang')) { u.searchParams.set('lang', next); history.replaceState(history.state, '', u); }
+  } catch { /* 沒有網址就略過 */ }
   sync();
   subs.forEach(fn => fn());
 }
@@ -36,7 +52,7 @@ export function useLang() {
 function raw(key, l = lang) {
   const v = dicts[l] && dicts[l][key];
   if (v != null) return v;
-  return dicts['zh-TW'][key];
+  return dicts[DEFAULT][key];
 }
 
 /** t('res.time', { m: 1, s: 5 }) */
@@ -53,7 +69,7 @@ let srv = null;
 const esc = s => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 function buildSrv() {
   srv = [];
-  for (const [key, text] of Object.entries(dicts['zh-TW'])) {
+  for (const [key, text] of Object.entries(dicts[DEFAULT])) {
     if (!key.startsWith('srv.')) continue;
     const names = [];
     let re = '^', i = 0;
@@ -69,7 +85,7 @@ function buildSrv() {
   }
 }
 export function serverMessage(text) {
-  if (!text || lang === 'zh-TW') return text;
+  if (!text || lang === DEFAULT) return text;
   if (!srv) buildSrv();
   for (const p of srv) {
     const m = p.re.exec(text);

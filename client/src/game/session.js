@@ -5,6 +5,9 @@ import AI from '@shared/ai.js';
 import { net } from '../net.js';
 import { getBest, getSave, record, setBest } from '../store.js';
 import * as sound from '../sound.js';
+import * as analytics from '../analytics.js';
+
+let roundSeq = 0;
 
 /* 鏡頭仰角 52°：畫面上下被壓扁，把螢幕方向換算成場地方向時要補回來 */
 export const TILT = Math.sin((52 * Math.PI) / 180);
@@ -29,6 +32,7 @@ export class GameSession {
   /** opts: { kind, setup?, startInfo?, slot?, world?, now? } */
   constructor(opts) {
     this.kind = opts.kind;
+    this.roundId = ++roundSeq;
     this.world = opts.world || null;
     this.now = opts.now || (() => performance.now() / 1000);
     this.listeners = new Set();
@@ -154,11 +158,16 @@ export class GameSession {
         case 'die':
           if (e.slot === this.slot) { sound.sfx('die'); sound.vibrate(240); } else sound.sfx('item');
           break;
+        case 'bump': if (e.slot === this.slot) { sound.sfx('bump'); sound.vibrate(30); } break;
         case 'count': sound.sfx('count'); this.flashText(String(e.n)); break;
-        case 'go': sound.sfx('go'); sound.music('battle'); this.flashText('go'); break;
+        case 'go':
+          sound.sfx('go'); sound.music('battle'); this.flashText('go');
+          analytics.gameStart({ mode: this.kind === 'challenge' ? 'solo' : this.kind === 'online' ? 'online' : 'ai', players: this.view.players.length, spectator: this.slot < 0 }, this.roundId);
+          break;
         case 'over':
           if (this.view.mode === 'challenge') sound.sfx('lose');
           else sound.sfx(e.winner == null || e.winner < 0 ? 'draw' : e.winner === this.slot || this.slot < 0 ? 'win' : 'lose');
+          analytics.gameEnd({ result: this.view.mode === 'challenge' ? 'complete' : e.winner == null || e.winner < 0 ? 'draw' : e.winner === this.slot ? 'win' : 'lose' }, this.roundId);
           break;
         default:
       }
@@ -175,6 +184,18 @@ export class GameSession {
     let best = null;
     for (const p of this.view.players) if (p.alive && (!best || p.score > best.score)) best = p;
     this.watch = best ? best.slot : -1;
+  }
+  /** 點資訊欄的玩家切換視角：只有出局或觀戰時可用，對象必須還活著。 */
+  canWatch() {
+    const me = this.me();
+    return this.view.phase !== 'over' && (this.slot < 0 || (!!me && !me.alive));
+  }
+  setWatch(slot) {
+    if (!this.canWatch()) return;
+    const p = this.view.players.find(q => q.slot === slot);
+    if (!p || !p.alive) return;
+    this.watch = slot;
+    this.hudAt = -1; this.updateHud(true);
   }
   nextWatch() {
     const alive = this.view.players.filter(p => p.alive);
@@ -255,6 +276,7 @@ export class GameSession {
     this.resetInput();
     this.listeners.clear();
     this.onResult = null;
+    analytics.gameAbort();
     if (this.world) { this.world.dispose(); this.world = null; }
   }
 }

@@ -5,6 +5,7 @@ import { config } from './config.js';
 import { getSave } from './store.js';
 import { serverMessage, t } from './i18n.js';
 import * as sound from './sound.js';
+import { roomResponse } from './analytics.js';
 
 export const online = createStore({
   room: null, rooms: [], notice: '', chat: [], inGame: false, mySlot: -1, startInfo: null, result: null,
@@ -86,12 +87,14 @@ export function initOnline() {
     }
   });
   net.on('joined', m => {
+    roomResponse('joined');
     online.set({ invite: null }); cleanUrl();
     if (m.note) toast(serverMessage(m.note), 4);
     sound.sfx('join');
     if (cur().screen !== 'game') go('room');
   });
   net.on('joinFailed', m => {
+    roomResponse('joinFailed');
     const inv = online.get().invite;
     if (inv && inv.joining) online.set({ invite: { ...inv, joining: false, error: m.reason } });
     else toast(reasonText(m.reason) || t('net.cantJoin'), 3.6);

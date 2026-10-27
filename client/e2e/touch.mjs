@@ -16,7 +16,7 @@ const state = page => page.evaluate(() => { const s = window.__snake3d && window
 
 for (const [sizeName, size] of [['phoneL', SIZES.phoneL], ['tabletP', SIZES.tabletP]]) {
   console.log('\n[' + sizeName + ']');
-  const page = await newPage(b, size, 'zh-TW', url);
+  const page = await newPage(b, size, 'zh-Hant', url);
   const cdp = await page.context().newCDPSession(page);
   await btn(page, '單人挑戰').click();
   await btn(page, '開始遊戲').click();
@@ -99,14 +99,24 @@ for (const [sizeName, size] of [['phoneL', SIZES.phoneL], ['tabletP', SIZES.tabl
 
 /* 語言按鈕緊鄰設定按鈕；語言與音量等偏好保存 */
 {
-  const page = await newPage(b, SIZES.phoneP, 'zh-TW', url);
+  const page = await newPage(b, SIZES.phoneP, 'zh-Hant', url);
   const lang = page.locator('.topright .langbtn'), gear = page.locator('.topright .ibtn-orange');
   const a = await lang.boundingBox(), g = await gear.boundingBox();
   ok(g.x - (a.x + a.width) < 16 && g.x > a.x && Math.abs(g.y - a.y) < 6, `語言按鈕緊鄰設定按鈕（間距 ${Math.round(g.x - (a.x + a.width))}px）`);
   await lang.click();
-  ok((await page.locator('h1').first().getAttribute('aria-label')) === '3D Snake' || (await page.title()).includes('3D Snake'), '一鍵切換為英文');
+  ok(await page.getByRole('menuitemradio').count() === 3, '語言選單列出三種語言');
+  ok(await page.getByRole('menuitemradio', { name: '繁體中文' }).getAttribute('aria-checked') === 'true', '目前語言（繁體）已勾選');
+  await page.keyboard.press('Escape');
+  ok(await page.getByRole('menuitemradio').count() === 0 && await page.evaluate(() => document.activeElement.classList.contains('langbtn')), 'Esc 關閉選單並把焦點還給語言鈕');
+  await lang.click(); await page.getByRole('menuitemradio', { name: '简体中文' }).click();
+  ok(await page.evaluate(() => document.documentElement.lang) === 'zh-Hans' && (await page.title()).includes('贪吃蛇'), '切換為簡體中文');
+  await lang.click(); await page.getByRole('menuitemradio', { name: 'English' }).click();
+  ok((await page.title()).includes('3D Snake') && await page.evaluate(() => localStorage.getItem('game-island-lang')) === 'en', '切換為英文並寫入共用 key');
   await page.reload(); await page.waitForSelector('.app');
   ok(await page.evaluate(() => document.documentElement.lang) === 'en', '語言偏好重新整理後保留');
+  await page.goto(url + (url.includes('?') ? '&' : '?') + 'lang=zh-Hans'); await page.waitForSelector('.app');
+  ok(await page.evaluate(() => document.documentElement.lang) === 'zh-Hans', '網址 ?lang= 優先於已保存的語言');
+  await page.goto(url); await page.waitForSelector('.app');
   await page.getByRole('button', { name: 'Settings' }).click();
   const bgm = page.getByRole('switch', { name: 'Music', exact: true });
   await bgm.click();

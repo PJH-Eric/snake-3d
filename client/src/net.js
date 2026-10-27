@@ -2,6 +2,7 @@
  * close() 會停止所有計時器與請求。首頁、單機與本機 AI 完全不會碰這個模組的 open()。 */
 import { config, wsUrl } from './config.js';
 import { getSave, setClientKey } from './store.js';
+import { roomRequest } from './analytics.js';
 
 /** 只在線上連線持續 30 秒未成功時提示一次；恢復或離開後重設。 */
 export class OutageWindow {
@@ -83,6 +84,7 @@ export class Net {
 
   send(msg) {
     if (!this.connected) return false;
+    roomRequest(msg);
     this.sock.send(JSON.stringify(msg));
     return true;
   }

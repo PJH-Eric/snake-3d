@@ -118,12 +118,27 @@ t('長越長越粗、越粗轉得越慢', () => {
   assert(R.radiusFor(80) > R.radiusFor(10));
   assert(R.turnRate(R.radiusFor(80)) < R.turnRate(R.radiusFor(10)));
 });
-t('撞圍欄出局：整條身體變成發光果實；單人挑戰結束', () => {
+t('撞圍欄不出局：被擋在內側並順著圍欄滑行，轉回場內就離開圍欄', () => {
   const s = game(1); toPlay(s); clearFoods(s);
   const p = put(s, 0, s.R - 1.2, 0, 0, 20);
+  let bumps = 0, dies = 0;
+  for (let i = 0; i < 90; i++) { tick(s); bumps += evs(s, 'bump').length; dies += evs(s, 'die').length; }
+  assert(p.alive && dies === 0, '撞圍欄不該出局');
+  assert(Math.hypot(p.x, p.z) + p.r * 0.6 <= s.R + 1e-6, '蛇頭不能穿出圍欄');
+  assert(bumps >= 1, '碰到圍欄要有碰撞事件');
+  assert(Math.abs(Math.cos(p.ang) * p.x + Math.sin(p.ang) * p.z) / Math.hypot(p.x, p.z) < 0.2, '蛇應該沿著圍欄切線滑行');
+  assert.strictEqual(s.phase, 'play');
+  p.ta = Math.atan2(-p.z, -p.x);
+  tick(s, 60);
+  assert(Math.hypot(p.x, p.z) < s.R - 3, '把方向轉回場內後會離開圍欄');
+});
+t('單人挑戰：撞到障礙才結束（整條身體變成發光果實）', () => {
+  const s = game(1); toPlay(s); clearFoods(s);
+  s.rocks = [[5, 0, 1]];
+  const p = put(s, 0, 0, 0, 0, 20);
   let die = null;
-  for (let i = 0; i < 30 && !die; i++) { tick(s); die = evs(s, 'die')[0]; }
-  assert(die && die.why === 'wall');
+  for (let i = 0; i < 60 && !die; i++) { tick(s); die = evs(s, 'die')[0]; }
+  assert(die && die.why === 'rock');
   assert(die.orbs >= 5, '應該掉發光果實');
   assert(s.foods.filter(f => f.type === 2).length === die.orbs);
   assert(!p.alive);

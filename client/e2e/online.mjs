@@ -13,7 +13,7 @@ const hasText = (p, text, timeout = 15000) => p.getByText(text, { exact: false }
 
 /* ---------- 0. 單機／首頁不連後端 ---------- */
 {
-  const page = await newPage(b, SIZES.desktop, 'zh-TW', base);
+  const page = await newPage(b, SIZES.desktop, 'zh-Hant', base);
   const reqs = [];
   page.on('request', r => { if (r.url().startsWith(SERVER)) reqs.push(r.url()); });
   page.on('websocket', ws => reqs.push('ws:' + ws.url()));
@@ -24,7 +24,7 @@ const hasText = (p, text, timeout = 15000) => p.getByText(text, { exact: false }
   await page.context().close();
 }
 
-const host = await newPage(b, SIZES.desktop, 'zh-TW', base);
+const host = await newPage(b, SIZES.desktop, 'zh-Hant', base);
 const hostReqs = [];
 host.on('request', r => { if (r.url().includes('/api/presence')) hostReqs.push(r.url()); });
 await btn(host, '線上多人').click();
@@ -58,7 +58,7 @@ const playerLink = await makeLink('player');
 ok(/room=[A-Z]+&invite=\w+/.test(playerLink), '產生玩家邀請連結');
 const specLink = await makeLink('spectator');
 
-const guest = await newPage(b, SIZES.tabletL, 'zh-TW', playerLink);
+const guest = await newPage(b, SIZES.tabletL, 'zh-Hant', playerLink);
 ok(await hasText(guest, '你被邀請加入'), '邀請連結停在大廳，顯示邀請房間與暱稱欄位（不自動進房）');
 ok(await guest.locator('.screen').getByText('玩家席位').count() === 0, '確認暱稱前不在房間內');
 if (shots) await guest.screenshot({ path: out + 'invite.png' });
@@ -69,7 +69,7 @@ ok(await hasText(host, '小客人'), '房主看到新玩家');
 await btn(guest, '我準備好了').click();
 await host.waitForTimeout(500);
 
-const spec = await newPage(b, SIZES.phoneP, 'zh-TW', specLink);
+const spec = await newPage(b, SIZES.phoneP, 'zh-Hant', specLink);
 const specOk = await hasText(spec, '以觀戰者加入');
 if (!specOk) console.log('   [debug]', specLink, (await spec.locator('body').innerText()).slice(0, 300).replace(/\s+/g, ' '));
 ok(specOk, '觀戰邀請顯示「以觀戰者加入」');
@@ -115,7 +115,7 @@ await host.getByRole('button', { name: '離開房間' }).first().click();
 await host.getByRole('button', { name: '離開', exact: true }).last().click();
 ok(await hasText(spec, '房間已經沒有玩家', 8000) || await hasText(spec, '自動關閉', 3000), '真人全部離開 → 房間自動關閉並通知觀戰者');
 ok(await hasText(spec, '線上大廳', 8000), '觀戰者回到大廳');
-const late = await newPage(b, SIZES.desktop, 'zh-TW', playerLink);
+const late = await newPage(b, SIZES.desktop, 'zh-Hant', playerLink);
 ok(await hasText(late, '這個房間已經結束了') || await hasText(late, '邀請連結無效', 3000), '已關閉房間的邀請連結顯示可理解的提示');
 ok(hostReqs.length === 0, '沒有任何 /api/presence 請求');
 for (const [n, p] of [['host', host], ['guest', guest], ['spec', spec]]) if (p.errors.length) { fails++; console.log('  ✗ ' + n + ' 錯誤：' + p.errors.join(' | ')); }

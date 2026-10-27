@@ -1,7 +1,7 @@
 /* 連續重開場次的記憶體檢查：JS heap 與 WebGL 資源是否隨場次成長。 */
 import { launch, newPage, SIZES, APP } from './lib.mjs';
 const b = await launch();
-const page = await newPage(b, SIZES.desktop, 'zh-TW', APP + '?e2e=1');
+const page = await newPage(b, SIZES.desktop, 'zh-Hant', APP + '?e2e=1');
 const rounds = Number(process.argv[2] || 12);
 await page.getByRole('button', { name: '單人挑戰' }).first().click();
 await page.getByRole('button', { name: '開始遊戲' }).first().click();

@@ -16,9 +16,9 @@ export async function launch() {
   return chromium.launch({ channel: 'msedge', args: ['--use-gl=angle', '--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--autoplay-policy=no-user-gesture-required'] });
 }
 
-export async function newPage(browser, size, lang = 'zh-TW', url = APP) {
+export async function newPage(browser, size, lang = 'zh-Hant', url = APP) {
   const ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, hasTouch: !!size.hasTouch, isMobile: !!size.isMobile, deviceScaleFactor: 1 });
-  await ctx.addInitScript(l => { try { if (!localStorage.getItem('snake3d.lang')) localStorage.setItem('snake3d.lang', l); } catch (e) { /* ignore */ } }, lang);
+  await ctx.addInitScript(l => { try { if (!localStorage.getItem('game-island-lang')) localStorage.setItem('game-island-lang', l); } catch (e) { /* ignore */ } }, lang);
   const page = await ctx.newPage();
   page.errors = [];
   page.on('pageerror', e => page.errors.push('pageerror: ' + e.message));

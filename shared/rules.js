@@ -232,10 +232,24 @@ const Rules = (function () {
     p.v = p.base * mul * (p.boosting ? BOOST_MUL : 1);
     p.x += Math.cos(p.ang) * p.v * dt;
     p.z += Math.sin(p.ang) * p.v * dt;
+    slideAlongWall(s, p);
     p.trail.push(p.x, p.z);
     if (p.grow > 0) { const g = Math.min(p.grow, GROW_RATE * dt); p.len += g; p.grow -= g; }
     p.r = radiusFor(p.len);
     samplePts(p);
+  }
+
+  /* 圍欄不會讓蛇出局：頭碰到圍欄就被擋在內側，並順著圍欄切線滑行（直到玩家把方向轉回場內） */
+  function slideAlongWall(s, p) {
+    const lim = s.R - p.r * 0.6 - 0.01, d = Math.hypot(p.x, p.z);
+    if (d <= lim) return;
+    const nx = p.x / d, nz = p.z / d;
+    p.x = nx * lim; p.z = nz * lim;
+    if (Math.cos(p.ang) * nx + Math.sin(p.ang) * nz > 0) {
+      const side = Math.cos(p.ang) * -nz + Math.sin(p.ang) * nx >= 0 ? 1 : -1;
+      p.ang = Math.atan2(side * nx, -side * nz);
+      if (p.bumpT == null || s.time - p.bumpT > 0.6) { p.bumpT = s.time; s.events.push({ t: 'bump', slot: p.slot, x: p.x, z: p.z }); }
+    }
   }
 
   /* 空間格：每 2 單位一格，存所有活著的蛇身（第 1 節以後） */
@@ -283,7 +297,6 @@ const Rules = (function () {
     }
     for (const p of alive) {
       if (dead.has(p.slot)) continue;
-      if (Math.hypot(p.x, p.z) + p.r * 0.6 > s.R) { dead.set(p.slot, { p, why: 'wall', killer: null }); continue; }
       let hit = null;
       for (const k of s.rocks) if (Math.hypot(k[0] - p.x, k[1] - p.z) < k[2] + p.r * 0.75) { hit = { p, why: 'rock', killer: null }; break; }
       if (!hit) {

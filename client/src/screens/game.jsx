@@ -60,10 +60,11 @@ function MiniMap({ session, size }) {
 }
 
 /* ---------- 側欄：操作 Summary（上）＋ 聊天室（下，線上才有） ---------- */
-function SidePanel({ hud, kind, drawer, onClose, onMenu }) {
+function SidePanel({ hud, kind, drawer, onClose, onMenu, onWatch }) {
   useLang();
   const touch = coarse();
   const rows = hud.players;
+  const canWatch = canWatchHud(hud);
   return (
     <aside className={'game-side ' + (drawer ? 'drawer' : '')} aria-label={t('side.aria')}>
       <div className="side-head">
@@ -75,18 +76,22 @@ function SidePanel({ hud, kind, drawer, onClose, onMenu }) {
         <div className="side-sum">
           <Text small muted>{touch ? t('help.ctl.touch') : t('set.keys')}</Text>
           {hud.slot < 0 && <Chip tone="orange" icon="eye">{t('game.spectating')}</Chip>}
+          {canWatch && <Text small muted>{t('side.watchHint')}</Text>}
           {rows.map(p => {
             const me = p.slot === hud.slot;
             const name = playerName(p.kind, p.animal, p.name);
             const state = p.left ? t('sum.left') : !p.alive ? t('sum.out') : null;
             const role = p.kind === 'ai' ? (p.level ? t('sum.cpuLv', { lv: levelName(p.level) }) : t('sum.cpu')) : t('sum.player');
+            const pick = canWatch && p.alive && !me;
+            const Row = pick ? 'button' : 'div';
             return (
-              <div key={p.slot} className={'sum-row ' + (me ? 'me ' : '') + (!p.alive ? 'out' : '')}>
+              <Row key={p.slot} type={pick ? 'button' : undefined} className={'sum-row ' + (me ? 'me ' : '') + (!p.alive ? 'out ' : '') + (pick ? 'pick ' : '') + (hud.watch === p.slot && canWatch ? 'fol' : '')}
+                aria-pressed={pick ? hud.watch === p.slot : undefined} onClick={pick ? () => onWatch(p.slot) : undefined}>
                 <span className="swatch" style={{ background: slotColor(p.slot) }} />
                 <AnimalFace animal={p.animal} size={36} />
                 <span className="nm">{name}{me ? t('res.youTag') : ''}<small>{state || role}・{t('sum.len', { n: p.len })}{hud.mode === 'versus' ? `・${t('game.kills')} ${p.kills}` : ''}</small></span>
                 <span className="sc" aria-label={t('sum.score')}>{p.score}</span>
-              </div>
+              </Row>
             );
           })}
         </div>
@@ -364,7 +369,7 @@ export function GamePage({ params }) {
 
   return (
     <div className="game" style={{ '--sky-bg': '#cdeefa' }}>
-      {sideVisible && wide && <SidePanel hud={hud} kind={kind} onClose={() => setSideOpen(false)} onMenu={openMenu} />}
+      {sideVisible && wide && <SidePanel hud={hud} kind={kind} onClose={() => setSideOpen(false)} onMenu={openMenu} onWatch={s => session.setWatch(s)} />}
       <div className="game-main" ref={mainRef}>
         <canvas ref={canvasRef} className="game-canvas" tabIndex={-1} role="img" aria-label={t('game.stage')} />
         {hud && hud.slot >= 0 && <div className="touch-pad" style={{ position: 'absolute', inset: 0, zIndex: 7, touchAction: 'none' }}
@@ -396,11 +401,16 @@ export function GamePage({ params }) {
                 <span className="hud-pill hud-chip">{t('chip.len')} {me.len}</span>
                 <span className="hud-pill hud-chip">{t('chip.lv')} {1 + Math.floor(me.eaten / 5)}</span>
               </>
-            ) : (compact ? chipList(hud) : hud.players).map(p => (
-              <span key={p.slot} className={'hud-pill hud-chip ' + (p.slot === hud.slot ? 'me ' : '') + (!p.alive ? 'out' : '')}>
-                <i style={{ background: slotColor(p.slot) }} />{slotName(p)}{p.slot === hud.slot ? t('res.youTag') : ''} {p.score}
-              </span>
-            ))}
+            ) : (compact ? chipList(hud) : hud.players).map(p => {
+              const pick = canWatchHud(hud) && p.alive && p.slot !== hud.slot;
+              const Chip2 = pick ? 'button' : 'span';
+              return (
+                <Chip2 key={p.slot} type={pick ? 'button' : undefined} className={'hud-pill hud-chip ' + (p.slot === hud.slot ? 'me ' : '') + (!p.alive ? 'out ' : '') + (pick ? 'pick ' : '') + (pick && hud.watch === p.slot ? 'fol' : '')}
+                  aria-pressed={pick ? hud.watch === p.slot : undefined} onClick={pick ? () => session.setWatch(p.slot) : undefined}>
+                  <i style={{ background: slotColor(p.slot) }} />{slotName(p)}{p.slot === hud.slot ? t('res.youTag') : ''} {p.score}
+                </Chip2>
+              );
+            })}
           </div>
         )}
         {session && save.minimap && <MiniMap session={session} size={compact ? 92 : 132} />}
@@ -417,12 +427,20 @@ export function GamePage({ params }) {
             {kind !== 'online' && <Button size="sm" variant={hud.ff ? 'orange' : 'paper'} onClick={() => session.setFast(!hud.ff)}>{hud.ff ? t('ghost.normal') : t('ghost.ff')}</Button>}
           </div>
         )}
-        {sideVisible && !wide && <SidePanel hud={hud} kind={kind} drawer onClose={() => setSideOpen(false)} onMenu={openMenu} />}
+        {sideVisible && !wide && <SidePanel hud={hud} kind={kind} drawer onClose={() => setSideOpen(false)} onMenu={openMenu} onWatch={s => session.setWatch(s)} />}
       </div>
       {menu && <PauseModal kind={kind} onClose={() => setMenu(false)} />}
       {result && hud && <ResultModal res={result} kind={kind} hud={hud} />}
     </div>
   );
+}
+
+/** 出局或觀戰時可以點資訊欄的玩家切換視角（自己還活著時鏡頭固定跟自己） */
+function canWatchHud(hud) {
+  if (hud.phase === 'over') return false;
+  if (hud.slot < 0) return true;
+  const me = hud.players.find(p => p.slot === hud.slot);
+  return !!me && !me.alive;
 }
 
 /** 窄版只顯示自己與分數最高的幾位，其餘在資訊欄 */

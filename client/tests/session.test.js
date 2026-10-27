@@ -37,9 +37,11 @@ describe('單機場次（規則核心 + 電腦對手 + 結算）', () => {
     s1.dispose(); s2.dispose();
   });
 
-  it('單人挑戰：撞牆結束並更新最高分；結果只觸發一次', () => {
+  it('單人挑戰：撞到障礙結束並更新最高分；結果只觸發一次', () => {
     const setup = challengeSetup(getSave(), 777);
     const s = new GameSession({ kind: 'challenge', setup });
+    const me = s.state.players[0];
+    s.state.rocks.push([me.x + Math.cos(me.ang) * 5, me.z + Math.sin(me.ang) * 5, 1.2]);
     let fired = 0;
     s.onResult = () => { fired++; };
     s.state.players[0].score = 50;
@@ -50,6 +52,26 @@ describe('單機場次（規則核心 + 電腦對手 + 結算）', () => {
     for (let i = 0; i < 90; i++) s.tick(1 / 30);
     expect(fired).toBe(1);
     expect(getSave().statChallenge.play).toBe(1);
+  });
+
+  it('出局或觀戰時可點資訊欄切換視角，只能選還活著的人', () => {
+    const s = new GameSession({ kind: 'solo', setup: soloSetup(getSave(), 31, ['fox', 'bear']) });
+    let t = 0; s.now = () => t;
+    for (let i = 0; i < 100; i++) { t += 1 / 30; s.tick(1 / 30); }
+    expect(s.state.phase).toBe('play');
+    const [me, a, b] = s.state.players;
+    expect(s.canWatch()).toBe(false);
+    s.setWatch(a.slot);
+    expect(s.watch).toBe(-1);
+    me.alive = false; a.score = 1; b.score = 9;
+    t += 1 / 30; s.tick(1 / 30);
+    expect(s.canWatch()).toBe(true);
+    expect(s.watch).toBe(b.slot);
+    s.setWatch(a.slot);
+    expect(s.watch).toBe(a.slot);
+    s.setWatch(me.slot);
+    expect(s.watch).toBe(a.slot);
+    s.dispose();
   });
 
   it('暫停（開啟視窗）時單機規則不前進，恢復後繼續', () => {
