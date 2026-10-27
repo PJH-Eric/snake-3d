@@ -37,8 +37,8 @@ import Rules from '@shared/rules.js';
 export const THEME_OPTIONS = [-1, ...Array.from({ length: Rules.THEME_COUNT }, (_, i) => i)];
 export const theme = id => THEMES[((id % THEMES.length) + THEMES.length) % THEMES.length];
 
-/* 一般果實的 8 種外觀（順序對應 shared/rules.js 的 FRUIT_KINDS）：蘋果、橘子、梨子、蜜桃、檸檬、李子、櫻桃、藍莓 */
-export const FRUIT_BODY = ['#ff5a52', '#ffa63d', '#a9dc5a', '#ffa9a0', '#ffe14d', '#8a5cc2', '#c4263d', '#4a6fd8'];
+/* 一般果實的 12 種外觀（順序對應 shared/rules.js 的 FRUIT_SCORES）：草莓、鳳梨、芒果、西瓜、水蜜桃、葡萄、橘子、蘋果、櫻桃、香蕉、芭樂、蓮霧 */
+export const FRUIT_BODY = ['#ff4d5e', '#e8b923', '#ffb43d', '#4cb85a', '#ffa9a0', '#8a5cc2', '#ff8a1f', '#ff5a52', '#c4263d', '#ffe14d', '#a8d86a', '#e8456b'];
 export const FRUIT_LEAF = '#4cc26a';
 export const INK = '#4a3320';
 export const CREAM = '#fff7e3';

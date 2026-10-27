@@ -48,8 +48,8 @@ const AMBIENT = [
   { color: ['#ff7a45', '#ffb347', '#ff5a36'], size: 0.12, vy: 0.9, sway: 0.8, n: 36 }
 ];
 const AMBIENT_TOP = 8;
-/* 果實外型 [寬, 高]，順序同 FRUIT_BODY：蘋果、橘子、梨子、蜜桃、檸檬、李子、櫻桃、藍莓 */
-const FRUIT_SHAPE = [[0.84, 0.78], [0.82, 0.74], [0.7, 1.0], [0.95, 0.74], [0.68, 0.92], [0.74, 0.7], [0.54, 0.54], [0.58, 0.58]];
+/* 果實外型 [寬, 高]，順序同 FRUIT_BODY：草莓、鳳梨、芒果、西瓜、水蜜桃、葡萄、橘子、蘋果、櫻桃、香蕉、芭樂、蓮霧 */
+const FRUIT_SHAPE = [[0.6, 0.72], [0.7, 1.05], [0.78, 0.9], [1.0, 0.9], [0.88, 0.74], [0.62, 0.62], [0.82, 0.74], [0.84, 0.78], [0.5, 0.5], [0.62, 1.0], [0.78, 0.82], [0.66, 0.86]];
 const lerp = (a, b, t) => a + (b - a) * t;
 
 function starGeometry() {
@@ -85,6 +85,23 @@ function tagTexture(text, color) {
   return { tex, aspect: w / c.height };
 }
 
+/* 吃到果實時跳出的「+分數」：用 sprite 浮起後淡出 */
+const POP_LIFE = 1.0;
+function popTexture(text, color) {
+  const fs = 64, pad = 14, c = document.createElement('canvas');
+  const g = c.getContext('2d');
+  const font = `800 ${fs}px "Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif`;
+  g.font = font;
+  c.width = Math.ceil(g.measureText(text).width) + pad * 2; c.height = fs + pad * 2;
+  g.font = font; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.lineJoin = 'round'; g.lineWidth = 12; g.strokeStyle = '#4a3320';
+  g.strokeText(text, c.width / 2, c.height / 2 + 2);
+  g.fillStyle = color; g.fillText(text, c.width / 2, c.height / 2 + 2);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace; tex.minFilter = THREE.LinearFilter; tex.generateMipmaps = false;
+  return { tex, aspect: c.width / c.height };
+}
+
 export class World3D {
   constructor(canvas, view, opts = {}) {
     this.canvas = canvas;
@@ -96,6 +113,8 @@ export class World3D {
     this.mats = new Map();
     this.snakes = new Map();
     this.puffs = [];
+    this.pops = [];
+    this.popCache = new Map();
     this.clock = 0; this.shake = 0; this.focus = null; this.camH = -1; this.shiftPx = 0;
     this.w = 1; this.h = 1;
 
@@ -535,9 +554,37 @@ export class World3D {
     if (n) this.puffMesh.instanceColor.needsUpdate = true;
   }
 
+  /** 在 (x, z) 跳出「+分數」，同分數共用同一張貼圖 */
+  addPop(x, z, score, color, big) {
+    if (this.pops.length > 24) return;
+    const text = '+' + score;
+    let tx = this.popCache.get(text + color);
+    if (!tx) { tx = popTexture(text, color); this.popCache.set(text + color, tx); }
+    const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tx.tex, depthTest: false, transparent: true }));
+    const h = big ? 1.5 : 1.1;
+    sp.scale.set(h * tx.aspect * 0.01, h * 0.01, 1); sp.renderOrder = 11; sp.position.set(x, 1.2, z);
+    this.scene.add(sp);
+    this.pops.push({ sp, life: 0, h, aspect: tx.aspect });
+  }
+
+  updatePops(dt) {
+    for (let i = this.pops.length - 1; i >= 0; i--) {
+      const p = this.pops[i];
+      p.life += dt;
+      const k = p.life / POP_LIFE;
+      if (k >= 1) { this.scene.remove(p.sp); p.sp.material.dispose(); this.pops.splice(i, 1); continue; }
+      /* 先彈大再回正（約前 20%），之後往上飄並淡出 */
+      const sc = k < 0.2 ? 0.4 + 0.9 * (k / 0.2) : 1.3 - 0.3 * Math.min(1, (k - 0.2) / 0.2);
+      p.sp.scale.set(p.h * p.aspect * sc, p.h * sc, 1);
+      p.sp.position.y = 1.2 + k * 1.6;
+      p.sp.material.opacity = k < 0.6 ? 1 : 1 - (k - 0.6) / 0.4;
+    }
+  }
+
   consume(events, selfSlot, reduceMotion) {
     for (const e of events || []) {
       if (e.t === 'eat') {
+        if (e.sc) this.addPop(e.x, e.z, e.sc, e.type === 1 ? '#ffd23d' : e.type === 2 ? '#ffffff' : '#fff3c4', e.slot === selfSlot);
         const c = e.type === 0 ? FRUIT_BODY[((e.v % FRUIT_BODY.length) + FRUIT_BODY.length) % FRUIT_BODY.length] : e.type === 1 ? '#ffd23d' : slotColor(e.v);
         this.addPuff(new THREE.Vector3(e.x, 0.5, e.z), c, 0.28, reduceMotion ? 3 : 8, 0.55);
         if (e.type === 1 && !reduceMotion) { this.addPuff(new THREE.Vector3(e.x, 0.9, e.z), '#fff3a0', 0.2, 14, 1.0); this.addPuff(new THREE.Vector3(e.x, 0.6, e.z), '#ffffff', 0.14, 10, 1.5); }
@@ -599,12 +646,16 @@ export class World3D {
     this.drawFoods(view);
     this.animateStage(dt);
     this.updatePuffs(dt);
+    this.updatePops(dt);
     this.renderer.render(this.scene, this.cam);
   }
 
   dispose() {
     for (const o of this.disposables) if (o && o.dispose) o.dispose();
     for (const sn of this.snakes.values()) if (sn.tag) { sn.tag.material.map.dispose(); sn.tag.material.dispose(); }
+    for (const p of this.pops) p.sp.material.dispose();
+    for (const tx of this.popCache.values()) tx.tex.dispose();
+    this.pops = []; this.popCache.clear();
     this.disposables = []; this.snakes.clear(); this.mats.clear();
     this.scene.traverse(o => { if (o.isInstancedMesh) o.dispose(); });
     this.renderer.dispose();

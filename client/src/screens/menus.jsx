@@ -7,7 +7,7 @@ import { go, myName } from '../app.js';
 import { getBest, update, useSave } from '../store.js';
 import { ANIMAL_IDS, animalName, levelHint, levelName, obstacleName, speedName, t, themeName, timeName, useLang } from '../i18n.js';
 import { pickAnimals, startChallenge, startSolo } from '../flow.js';
-import { SLOT_COLORS, THEME_OPTIONS } from '../data.js';
+import { FRUIT_BODY, SLOT_COLORS, THEME_OPTIONS } from '../data.js';
 import { lobbyClick, lobbyUrl } from '../analytics.js';
 
 export function Profile({ onChange }) {
@@ -96,7 +96,16 @@ export function HelpPage() {
           <Text>{t('help.ctl.boost')}<Keycap>{t('help.ctl.space')}</Keycap> / <Keycap>Shift</Keycap></Text>
           <Text muted small>{t('help.ctl.energy')}</Text>
         </Panel>
-        <Panel><Heading level={3}>{t('help.fruit')}</Heading><ul className="help-list">{[1, 2, 3, 4].map(i => <li key={i}>{t('help.fruit.' + i)}</li>)}</ul></Panel>
+        <Panel>
+          <Heading level={3}>{t('help.fruit')}</Heading>
+          <Text>{t('help.fruit.1')}</Text>
+          <ul className="fruit-grid">
+            {Rules.FRUIT_SCORES.map((sc, i) => (
+              <li key={i} className="fruit-item"><span className="fruit-dot" style={{ background: FRUIT_BODY[i] }} aria-hidden="true" /><span>{t('fruit.' + i)}</span><b>+{sc}</b></li>
+            ))}
+          </ul>
+          <ul className="help-list">{[2, 3, 4].map(i => <li key={i}>{t('help.fruit.' + i)}</li>)}</ul>
+        </Panel>
         <Panel><Heading level={3}>{t('help.out')}</Heading><ul className="help-list">{[1, 2, 3, 4, 5].map(i => <li key={i}>{t('help.out.' + i)}</li>)}</ul></Panel>
       </div>
       <Panel>

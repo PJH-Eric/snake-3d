@@ -76,7 +76,7 @@ const AI = (function () {
       let sc;
       if (brain.level === 'easy' || brain.level === 'toddler') sc = -d;
       else {
-        sc = (F.score + 6) / (d + 4);
+        sc = ((f.type === 0 ? R.fruitScore(f.v) : F.score) + 6) / (d + 4);
         /* 正後方的果實要大迴轉，打點折扣 */
         const da = Math.abs(R.wrapAng(Math.atan2(f.z - p.z, f.x - p.x) - p.ang));
         sc *= 1 - da / (Math.PI * 1.6);

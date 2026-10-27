@@ -98,21 +98,21 @@ t('蛇身每節間距固定，節數＝長度＋1', () => {
     assert(d <= R.SEG + 1e-6 && d > R.SEG * 0.6, '間距 ' + d);
   }
 });
-t('吃蘋果 +10、慢慢長 2 節；金星 +30；發光果實 +5', () => {
+t('吃蘋果 +12、慢慢長 2 節；金星 +30；發光果實 +5', () => {
   const s = game(2); toPlay(s); clearFoods(s);
   const p = s.players[0];
   const fx = p.x + Math.cos(p.ang) * 0.3, fz = p.z + Math.sin(p.ang) * 0.3;
-  s.foods.push({ id: 9001, x: fx, z: fz, type: 0, v: 0, ttl: 0 });
+  s.foods.push({ id: 9001, x: fx, z: fz, type: 0, v: 7, ttl: 0 });
   const L0 = p.len;
   tick(s);
-  assert.strictEqual(p.score, 10); assert.strictEqual(evs(s, 'eat').length, 1);
+  assert.strictEqual(p.score, 12); assert.strictEqual(evs(s, 'eat').length, 1); assert.strictEqual(evs(s, 'eat')[0].sc, 12);
   assert(p.len < L0 + 2, '應該慢慢長');
   tick(s, 30);
   assert(Math.abs(p.len - (L0 + 2)) < 1e-6);
   s.foods.push({ id: 9002, x: p.x, z: p.z, type: 1, v: 0, ttl: 10 });
   s.foods.push({ id: 9003, x: p.x, z: p.z, type: 2, v: 1, ttl: 40 });
   tick(s);
-  assert.strictEqual(p.score, 45);
+  assert.strictEqual(p.score, 47);
 });
 t('舞台主題：指定的編號照用，隨機時 12 種都會出現', () => {
   assert.strictEqual(R.THEME_COUNT, 12);
@@ -122,13 +122,14 @@ t('舞台主題：指定的編號照用，隨機時 12 種都會出現', () => {
   for (let seed = 1; seed <= 300; seed++) seen.add(game(1, { seed, themeId: -1 }).themeId);
   assert.strictEqual(seen.size, 12);
 });
-t('一般果實有 8 種外觀，分數與成長都一樣', () => {
+t('一般果實有 12 種，依大小分數各不相同', () => {
   const kinds = new Set();
-  for (let seed = 1; seed <= 20; seed++) for (const f of game(2, { seed }).foods) if (f.type === 0) { assert(Number.isInteger(f.v) && f.v >= 0 && f.v < 8, '外觀編號超出範圍：' + f.v); kinds.add(f.v); }
-  assert.strictEqual(kinds.size, 8, '8 種外觀都應該出現：' + [...kinds].sort().join(','));
+  for (let seed = 1; seed <= 20; seed++) for (const f of game(2, { seed }).foods) if (f.type === 0) { assert(Number.isInteger(f.v) && f.v >= 0 && f.v < R.FRUIT_SCORES.length, '外觀編號超出範圍：' + f.v); kinds.add(f.v); }
+  assert.strictEqual(kinds.size, R.FRUIT_SCORES.length, '每種外觀都應該出現：' + [...kinds].sort().join(','));
   const s = game(1); toPlay(s); clearFoods(s);
   const p = put(s, 0, 0, 0, 0);
-  for (const v of [0, 3, 7]) { const before = p.score; s.foods.push({ id: 9100 + v, x: p.x, z: p.z, type: 0, v, ttl: 0 }); tick(s); assert.strictEqual(p.score - before, 10, '外觀 ' + v + ' 的分數'); }
+  assert.strictEqual(new Set(R.FRUIT_SCORES).size, R.FRUIT_SCORES.length, '每種果實分數互不相同');
+  for (let v = 0; v < R.FRUIT_SCORES.length; v++) { const before = p.score; s.foods.push({ id: 9100 + v, x: p.x, z: p.z, type: 0, v, ttl: 0 }); tick(s); assert.strictEqual(p.score - before, R.FRUIT_SCORES[v], '果實 ' + v + ' 的分數'); }
 });
 t('長越長越粗、越粗轉得越慢', () => {
   assert(R.radiusFor(80) > R.radiusFor(10));

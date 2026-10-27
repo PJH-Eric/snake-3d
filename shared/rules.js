@@ -36,7 +36,11 @@ const Rules = (function () {
     { name: 'gold', score: 30, grow: 6, ttl: 15, rad: 0.55 },
     { name: 'orb', score: 5, grow: 1, ttl: 45, rad: 0.36 }
   ];
-  const FRUIT_KINDS = 8;            /* 一般果實（type 0）的外觀種類：蘋果、橘子、梨子、蜜桃、檸檬、李子、櫻桃、藍莓；分數與成長都相同 */
+  /* 一般果實（type 0）的 12 種：草莓、鳳梨、芒果、西瓜、水蜜桃、葡萄、橘子、蘋果、櫻桃、香蕉、芭樂、蓮霧；依實際大小，越大顆分數越高 */
+  const FRUIT_SCORES = [4, 18, 16, 20, 10, 6, 8, 12, 2, 14, 11, 7];
+  const FRUIT_KINDS = FRUIT_SCORES.length;
+  const fruitScore = v => FRUIT_SCORES[((v % FRUIT_KINDS) + FRUIT_KINDS) % FRUIT_KINDS];
+  const fruitGrow = v => Math.max(1, Math.round(fruitScore(v) / 5));
   const MAX_FOODS = 260;
   const MAX_ORBS_PER_DEATH = 50;
   const TAU = Math.PI * 2;
@@ -328,8 +332,9 @@ const Rules = (function () {
         const dx = f.x - p.x, dz = f.z - p.z, rr = p.r + F.rad + 0.15;
         if (dx * dx + dz * dz > rr * rr) continue;
         removeFood(s, i);
-        p.score += F.score; p.grow += F.grow; p.eaten++;
-        s.events.push({ t: 'eat', slot: p.slot, type: f.type, v: f.v, x: f.x, z: f.z, id: f.id });
+        const sc = f.type === 0 ? fruitScore(f.v) : F.score, gr = f.type === 0 ? fruitGrow(f.v) : F.grow;
+        p.score += sc; p.grow += gr; p.eaten++;
+        s.events.push({ t: 'eat', slot: p.slot, type: f.type, v: f.v, x: f.x, z: f.z, id: f.id, sc });
       }
     }
   }
@@ -510,7 +515,7 @@ const Rules = (function () {
 
   return {
     DT, COUNTDOWN, END_HOLD, SEG, START_LEN, BASE_R, TURN, BOOST_MUL, THEME_COUNT, TIME_LIMITS, SPEEDS, SPEED_ORDER, OBSTACLES, OBSTACLE_ORDER,
-    SLOT_COLORS, FOOD, MAX_FOODS, ENERGY_DRAIN, ENERGY_REGEN,
+    SLOT_COLORS, FOOD, FRUIT_SCORES, fruitScore, MAX_FOODS, ENERGY_DRAIN, ENERGY_REGEN,
     rng, wrapAng, arenaFor, radiusFor, turnRate, selfSkip, createGame, aim, steer: aim, setBoost, step, removePlayer,
     buildGrid, nearPts, startInfo, snapshot, viewFromStart, applySnapshot, playerBySlot, encPts, decPts
   };
