@@ -1,66 +1,87 @@
-# 3D貪吃蛇（Unity 版）
+# 3D貪吃蛇
 
-可愛動物園風的 3D 貪吃蛇，Unity 6.3 LTS（6000.3.27f1）→ **只輸出 WebGL**。
-本專案為唯一保留的貪吃蛇版本，使用 C# 規則核心與專案內的 Node.js 權威伺服器：單人挑戰、對戰電腦（簡單／普通／困難）、線上多人（大廳、房間、邀請連結、觀戰、聊天）。繁體中文／English。觸控優先（平板 > 桌機 > 手機），桌機用鍵盤操作（滑鼠不能操控蛇）。
+可愛動物園風的 3D 貪吃蛇：單人挑戰、對戰電腦（幼幼班／簡單／普通／困難）、線上多人（大廳、房間、邀請連結、觀戰、聊天）。繁體中文／English，觸控優先（手機、平板、桌機），桌機用鍵盤操作。
 
-## 開啟與執行
+- 前端：**React 18 + Three.js**（Vite 建置）→ `client/`
+- 後端：**Node.js** 權威房間伺服器（零第三方套件，自帶 WebSocket）→ `server/`
+- 規則核心、電腦對手與語系字典：前後端共用 → `shared/`
 
-1. Unity Hub 加入此資料夾，使用 **6000.3.27f1** 開啟（第一次會匯入並產生 `.meta`，請連同 `.meta` 一起 commit）。
-2. 首次開啟會自動套用專案設定（Gamma、WebGL 範本、舊版 Input 等）；也可手動執行選單 **Snake3D ▸ 套用專案設定**。
-3. 開啟 `Assets/Scenes/Main.unity`（空殼場景；所有畫面在執行時由 `App.Boot` 產生）→ Play。
-4. 線上模式需要伺服器：在編輯器內設環境變數 `GAME_SERVER_URL` 後啟動 Unity，或在網址加 `?server=https://...`（WebGL）。
+## 快速開始
 
-## 建置 WebGL
+需要 Node.js 22 以上。
 
-- 選單：**Snake3D ▸ 建置 WebGL**，輸出到 `Build/WebGL`。
-- 批次：
-  ```
-  GAME_SERVER_URL=https://your-service.onrender.com \
-  Unity -batchmode -quit -projectPath . -executeMethod Snake3D.EditorTools.BuildTool.BuildWebGL -logFile -
-  ```
-  建置時把 `GAME_SERVER_URL` 寫入 `Assets/Resources/ServerUrl.txt`（已被 `.gitignore` 忽略，建置後自動刪除）。
-- 不壓縮（Compression Disabled），GitHub Pages 可直接部署。
+```
+npm run install:all          # 安裝前端套件（後端沒有第三方套件）
+npm run build                # 建置前端到 client/dist
+npm start                    # 啟動後端（預設 3130），順便提供 client/dist → http://localhost:3130
+```
+
+開發時分開跑：
+
+```
+npm run dev:server           # 後端 http://localhost:3130
+cp client/.env.example client/.env.local     # GAME_SERVER_URL=http://localhost:3130
+npm run dev                  # 前端 http://localhost:5173（Vite dev server，熱更新）
+```
+
+單機模式（單人挑戰、對戰電腦）完全在瀏覽器內執行，不需要後端，也不會連線；只有進入「線上多人」或開啟邀請連結才會連後端。
+
+## 設定
+
+| 位置 | 變數 | 說明 |
+| --- | --- | --- |
+| 前端（建置時） | `GAME_SERVER_URL` | 後端公開的 HTTP(S) 網址（可含連接埠與子路徑，不可含帳密、查詢參數或 `#`）。沒設定時線上模式顯示「尚未設定伺服器」。網址參數 `?server=` 可臨時覆寫。HTTPS 頁面必須搭配 HTTPS 後端。 |
+| 後端 | `PORT` | 預設 3130 |
+| 後端 | `GAME_ALLOWED_ORIGIN` | 允許連進來的前端網址（逗號分隔）。留空代表不限制，只適合本機。 |
+| 後端 | `GAME_STATIC_DIR` | 選用：要順便提供的前端靜態檔資料夾，預設 `../client/dist` |
+
+範例見 `.env.example`、`client/.env.example`、`server/.env.example`；不要把 `.env*` 實際檔案提交進 Git。
+
+## 測試
+
+```
+npm test                     # server：規則核心、電腦對手、房間生命週期、端對端；client：vitest（設定、語系、連線層、場次）
+```
+
+瀏覽器 e2e（需要 Microsoft Edge；以軟體繪製 WebGL）：
+
+```
+npm run build
+npm --prefix client run preview -- --port 4173   # 另一個終端機
+npm start                                         # 另一個終端機（3130）
+SHOT_DIR=./shots SHOTS=1 npm run e2e              # 尺寸矩陣（手機／平板直橫向／桌機 × 中英文）＋線上流程，並存截圖
+```
+
+`SHOT_DIR` 與截圖都是可重建的產物，已被 `.gitignore` 忽略。
 
 ## 部署（預設拓撲）
 
-- 前端：把 `Build/WebGL` 內容發佈到 GitHub Pages；建置時由 Actions repository variable `GAME_SERVER_URL` 注入。
-- 後端：使用專案內 `Backend~/` 的 Node 伺服器（Render，`region: singapore`），設定 `GAME_ALLOWED_ORIGIN` 為 Pages 網址。Render 免費層會休眠，遊戲會先輪詢 `/health` 喚醒再連線。
-- 本專案不會自動 push 或建立雲端服務；`.github/workflows` 需自行加入。
-
-## 測試與檢查（不需要 Unity）
-
-```
-node CoreTests~/golden.js > CoreTests~/golden.json
-dotnet run --project CoreTests~/CoreTests.csproj -- CoreTests~/golden.json # 規則與參照比對
-dotnet build GameCheck~/GameCheck.csproj # 非 Unity 環境的型別檢查
-dotnet build GameCheck~/GameCheck.csproj -p:DefineConstants=UNITY_WEBGL # WebGL 條件編譯的簽名檢查
-dotnet run --project GameCheck~/InputTests/InputTests.csproj # 輸入、網址、喚醒狀態與 DPI／斷點計算
-npm --prefix Backend~ test # 權威伺服器、房間與真實 WebSocket
-```
-`~` 結尾的資料夾 Unity 會忽略。比對資料須先產生並明確傳入 CoreTests；沒有提供時測試會註明略過，不能宣稱已完成比對。
-GameCheck 的 Unity 替身主要供簽名檢查；InputTests 執行純 C# 狀態與數學計算，並以可控 HTTP 回應替身手動推進喚醒協程，不能取代真實 Unity 網路、Play Mode、WebGL 建置或畫面驗收。所有使用同一專案輸出目錄的 dotnet 指令請依序執行。
-
-`GAME_SERVER_URL`／`?server=` 必須是有效的 HTTP(S) 基底網址，可包含連接埠及服務子路徑；不可包含帳密、查詢參數或 fragment，否則拼接 `/health` 與 `/ws` 無法正確運作。HTTPS 頁面必須搭配 HTTPS 後端。
-
-2026-10-25 修復與未執行的畫面矩陣見 [QA 記錄](docs/qa-2026-10-25.md)。
+- **前端 → GitHub Pages**：`.github/workflows/pages.yml` 在 push 到 `main` 時測試、建置並部署 `client/dist`。在 repository 設定 Actions variable `GAME_SERVER_URL`（Render 後端的 HTTPS 網址）。
+- **後端 → Render**：`render.yaml`（Blueprint，`region: singapore`，Node 22）。在 Render 服務設定 `GAME_ALLOWED_ORIGIN` 為 Pages 網址（例如 `https://<帳號>.github.io`）。健康檢查 `/health`。
+  - Render 免費層會休眠：進入線上流程時前端會先輪詢 `/health` 喚醒再連線；連不上超過 30 秒會提示。房間只存在記憶體，服務重啟後會消失。
+  - Render 不支援修改既有服務的 region，更新 Blueprint 不會搬遷已建立的服務；要搬遷請建立新服務、複製環境變數，確認 `/health` 與線上對局可用後，再更新 `GAME_SERVER_URL` 並停用舊服務。
+- 本專案不會自動 push、建立雲端服務或設定網域。
 
 ## 專案結構
 
-- `Assets/Scripts/Core`：確定性規則核心（固定 30 tick/s、種子亂數、AI），無 Unity 相依。
-- `Assets/Scripts/Game`：3D 場景（程序建模）、自訂 uGUI 元件、頁面、網路、音效（程式合成）。
-- `Assets/Plugins/WebGL/SnakeBridge.jslib`：WebSocket、分享、震動等瀏覽器橋接。
-- `Assets/WebGLTemplates/SnakeTemplate`：全視窗畫布、載入條、SEO。
-- `Assets/Scripts/Editor`：專案設定與建置腳本。
+```
+client/    React + Three.js 前端
+  src/ui/        自訂元件（按鈕、彈窗、開關、滑桿、分段選擇、下拉、輸入、捲動區與捲軸）
+  src/screens/   首頁、說明、單機設定、大廳、房間、對戰（HUD、側欄、結算 overlay）
+  src/game/      world.js（Three.js 舞台）、session.js（規則／快照／輸入）
+  tests/ e2e/    vitest 單元測試、Edge 端對端
+server/    房間、邀請、觀戰、聊天、權威對局、WebSocket
+shared/    rules.js（確定性規則，固定 30 tick/s、種子亂數）、ai.js、locales.json
+```
+
+## 操作與規則
+
+- 觸控：手指按在畫面任何地方拖曳（搖桿），按住「加速」鈕衝刺；設定裡可改成固定位置搖桿、換左右手。
+- 鍵盤：方向鍵／WASD（可斜走）、Space／Shift 加速；Esc 開暫停選單。
+- 吃果實變長變粗；撞到圍欄、石頭、自己或別條蛇就出局，身體變成發光果實。最後存活者獲勝，有時限時分數最高者獲勝。
 
 ## 已知限制
 
-- 字型為 Noto Sans CJK TC 子集（見 `THIRD_PARTY_NOTICES.md`）；子集外的暱稱字會顯示方框。
-- WebGL 的 InputField 不支援完整 IME 組字體驗；手機輸入中文依系統鍵盤而異。
-- 電腦對手在 C# 與 JS 之間因浮點末位差異，同一種子後期可能與伺服器參照走法分歧（規則不變，golden 測試容許此差異）。
-- 美術與音效皆為程式產生的暫用資產，可替換成正式資源。
-
-## 專案內伺服器與維護
-
-以 `npm --prefix Backend~ start` 啟動權威伺服器（預設 3130）；只有 Unity/WebGL 是玩家介面，`Backend~/public/js/` 僅保留權威規則、AI 與語系來源，不含舊網頁版遊戲。Unity 載入 `GAME_SERVER_URL` 指向該伺服器；網址與跨來源限制依 `Backend~/.env.example` 設定。
-
-`Library/`、`Temp/`、`Logs/`、`Build/`、測試的 `bin/`、`obj/`、產生的 golden 資料、截圖及快取均為可重建產物，測試後可清除；保留 `Assets/`、`.meta`、字型、音訊、正式圖片、`Packages/`、`ProjectSettings/` 與所有測試來源。Unity 介面目前提供繁體中文與英文。
+- 美術與音效皆為程式產生的暫用資產（Three.js 基本幾何、WebAudio 合成），可替換成正式資源。
+- 字型使用 Google Fonts（Baloo 2、Noto Sans TC），離線時退回系統字型。
+- 房間狀態存在後端記憶體；斷線超過 30 秒視為離場。

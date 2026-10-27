@@ -214,6 +214,8 @@ export function GamePage({ params }) {
     s.paused = () => kind !== 'online' && isModalOpen();
     s.onResult = res => setResult(res);
     sound.music('menu');
+    setResult(null); setMenu(false);
+    if (new URLSearchParams(location.search).has('e2e')) window.__snake3d = { session: s };
     setSession(s);
     const unbridge = kind === 'online' ? attachBridge({ onSnap: snap => s.onSnap(snap), onResult: (r, p) => s.onServerResult(r, p) }) : null;
     let raf = 0, last = performance.now();
@@ -322,7 +324,7 @@ export function GamePage({ params }) {
       ox = z.cx; oy = z.cy;
     }
     stick.current = { id: e.pointerId, ox, oy };
-    e.currentTarget.setPointerCapture(e.pointerId);
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* 合成事件沒有可捕捉的指標 */ }
     placeStick(ox, oy, true);
     padMove(e);
   };

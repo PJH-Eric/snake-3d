@@ -1,0 +1,16 @@
+# Render Blueprint：只部署後端（API／WebSocket）。前端由 GitHub Pages 提供。
+# 新加坡節點；Render 不支援修改既有服務的 region，要搬遷請建立新服務後再更新 GitHub 的 GAME_SERVER_URL。
+services:
+  - type: web
+    name: snake-3d-server
+    runtime: node
+    region: singapore
+    plan: free
+    buildCommand: node --version
+    startCommand: node server/server.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: 22
+      - key: GAME_ALLOWED_ORIGIN
+        sync: false      # 在 Render 設為 GitHub Pages 網址，例如 https://<帳號>.github.io

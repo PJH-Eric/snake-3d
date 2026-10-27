@@ -18,7 +18,7 @@ export async function launch() {
 
 export async function newPage(browser, size, lang = 'zh-TW', url = APP) {
   const ctx = await browser.newContext({ viewport: { width: size.width, height: size.height }, hasTouch: !!size.hasTouch, isMobile: !!size.isMobile, deviceScaleFactor: 1 });
-  await ctx.addInitScript(l => { try { localStorage.setItem('snake3d.lang', l); } catch (e) { /* ignore */ } }, lang);
+  await ctx.addInitScript(l => { try { if (!localStorage.getItem('snake3d.lang')) localStorage.setItem('snake3d.lang', l); } catch (e) { /* ignore */ } }, lang);
   const page = await ctx.newPage();
   page.errors = [];
   page.on('pageerror', e => page.errors.push('pageerror: ' + e.message));
@@ -54,6 +54,13 @@ export async function layoutIssues(page) {
       if (el.scrollWidth > el.clientWidth + 2 && getComputedStyle(el).overflow !== 'visible') issues.push(`文字被截斷：${name(el)}`);
       const r = el.getBoundingClientRect();
       if ((el.matches('.btn, .ibtn, .seg-item')) && (r.height < 32 || r.width < 32)) issues.push(`觸控區過小：${name(el)} ${Math.round(r.width)}x${Math.round(r.height)}`);
+    }
+    /* 捲動區必須被容器限制高度，否則內容超出時會被裁掉而無法到達 */
+    for (const sa of document.querySelectorAll('.sa')) {
+      const vp = sa.querySelector(':scope > .sa-vp');
+      if (!vp || !visible(sa)) continue;
+      if (vp.getBoundingClientRect().height > sa.getBoundingClientRect().height + 1) issues.push('捲動區未被限制高度（內容會被裁掉）：' + (sa.className + ''));
+      if (sa.getBoundingClientRect().bottom > innerHeight + 1 && !sa.closest('.sa-vp')) issues.push('捲動區超出視窗下緣：' + (sa.className + ''));
     }
     /* 重疊：右上角設定／語言不得遮住可操作的主要控制（簡易檢查：與 .hud-tl、.hud-top 的矩形相交） */
     const tr = document.querySelector('.topright');

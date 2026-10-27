@@ -28,13 +28,21 @@ export function Button({ children, onClick, variant = 'primary', size = 'md', ic
   );
 }
 
-export function IconButton({ icon, label, onClick, variant = 'sky', size = 48, badge, className = '', disabled, pressed, buttonRef }) {
+export function IconButton({ icon, label, onClick, variant = 'sky', size = 48, badge, className = '', disabled, pressed, buttonRef, text, lang }) {
   return (
-    <button ref={buttonRef} type="button" className={`ibtn ibtn-${variant} ${className}`} style={{ '--sz': size + 'px' }} aria-label={label} title={label}
+    <button ref={buttonRef} type="button" className={`ibtn ibtn-${variant} ${text ? 'ibtn-text' : ''} ${className}`} style={{ '--sz': size + 'px' }} aria-label={label} title={label} lang={lang}
       disabled={disabled} aria-pressed={pressed} onClick={e => { sound.sfx('click'); onClick && onClick(e); }}>
-      <Icon name={icon} size={Math.round(size * 0.5)} />
+      {text ? <span className="ibtn-label" aria-hidden="true">{text}</span> : <Icon name={icon} size={Math.round(size * 0.5)} />}
       {badge ? <span className="ibtn-badge" aria-hidden="true">{badge}</span> : null}
     </button>
+  );
+}
+
+/* 單選卡片（角色挑選等） */
+export function RadioCard({ checked, onClick, children, disabled }) {
+  return (
+    <button type="button" role="radio" aria-checked={checked} disabled={disabled} className={'radio-card ' + (checked ? 'on' : '')}
+      onClick={() => { sound.sfx('click'); onClick(); }}>{children}</button>
   );
 }
 

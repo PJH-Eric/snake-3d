@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import AI from '@shared/ai.js';
 import Rules from '@shared/rules.js';
-import { AnimalFace, Button, Chip, Heading, Keycap, Panel, Row, Segmented, Select, Stack, Stepper, Text, TextField } from '../ui/kit.jsx';
+import { AnimalFace, Button, Chip, Heading, Keycap, Panel, RadioCard, Row, Segmented, Select, Stack, Stepper, Text, TextField } from '../ui/kit.jsx';
 import { Screen } from '../shell.jsx';
 import { go, myName } from '../app.js';
 import { getBest, update, useSave } from '../store.js';
@@ -20,10 +20,9 @@ export function Profile({ onChange }) {
         <div className="field-label"><span>{t('prof.animal')}</span></div>
         <div className="animal-grid" role="radiogroup" aria-label={t('prof.pick')}>
           {ANIMAL_IDS.map(id => (
-            <button key={id} type="button" role="radio" aria-checked={d.animal === id} className={'animal-pick ' + (d.animal === id ? 'on' : '')}
-              onClick={() => { update({ animal: id }); onChange && onChange(); }}>
+            <RadioCard key={id} checked={d.animal === id} onClick={() => { update({ animal: id }); onChange && onChange(); }}>
               <AnimalFace animal={id} size={52} />{animalName(id)}
-            </button>
+            </RadioCard>
           ))}
         </div>
       </div>

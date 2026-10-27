@@ -35,10 +35,8 @@ export function TopRight() {
   return (
     <>
       <div className="topright">
-        <button type="button" className="ibtn ibtn-paper langbtn" style={{ '--sz': '48px', width: 'auto', padding: '0 12px', borderRadius: 24 }}
-          aria-label={t('lang.switch') + '：' + t('lang.' + next)} title={t('lang.switch')} lang={next} onClick={() => setLang(next)}>
-          <span className="ibtn-label" aria-hidden="true">{lang === 'zh-TW' ? 'EN' : '中文'}</span>
-        </button>
+        <IconButton icon="globe" variant="paper" className="langbtn" text={lang === 'zh-TW' ? 'EN' : '中文'} lang={next}
+          label={t('lang.switch') + '：' + t('lang.' + next)} onClick={() => setLang(next)} />
         <IconButton icon="settings" label={t('set.title')} onClick={() => setOpen(true)} variant="orange" />
       </div>
       {open && <SettingsModal onClose={() => setOpen(false)} />}
