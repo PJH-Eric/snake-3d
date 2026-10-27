@@ -234,7 +234,7 @@ export class World3D {
     for (const k of view.rocks) {
       const grp = new THREE.Group();
       grp.position.set(k[0], 0, k[1]);
-      this.buildRock(grp, k[2] * 2, k, th);
+      this.buildRock(grp, k[2] * 2, k);
       scene.add(grp);
     }
 
@@ -301,10 +301,12 @@ export class World3D {
   }
 
   /** 石頭外型；d 是直徑（= 碰撞圓直徑）。 */
-  buildRock(grp, d, k, th) {
+  buildRock(grp, d, k) {
     const g = this.geo;
-    this.part(grp, g.sphere, this.mat(th.rock0), [0, d * 0.32, 0], [d, d * 0.72, d], [0, k[0] * 40, 0]);
-    this.part(grp, g.sphere, this.mat(th.rock1), [d * 0.22, d * 0.2, d * 0.18], [d * 0.55, d * 0.4, d * 0.5]);
+    /* 所有主題統一的石頭配色：深色底影＋灰色石身，任何地圖一眼認得出來 */
+    this.part(grp, g.sphere, this.mat('#4f565e'), [0, 0.03, 0], [d * 1.08, d * 0.12, d * 1.08]);
+    this.part(grp, g.sphere, this.mat('#a3a9b1'), [0, d * 0.32, 0], [d, d * 0.72, d], [0, k[0] * 40, 0]);
+    this.part(grp, g.sphere, this.mat('#7f868f'), [d * 0.22, d * 0.2, d * 0.18], [d * 0.55, d * 0.4, d * 0.5]);
   }
 
   buildFoods() {
