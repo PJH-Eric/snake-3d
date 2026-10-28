@@ -50,6 +50,7 @@ function createHub(opt) {
 
   /* ---------- 工具 ---------- */
   const emit = (key, msg) => emitOut(key, msg);
+  function onlineCount() { return Array.from(persons.values()).filter(p => p.connected).length; }
   function randomName() { return ADJ[Math.floor(rnd() * ADJ.length)] + ANIMAL_NAMES[ANIMALS[Math.floor(rnd() * ANIMALS.length)]]; }
   function token() { let t = ''; while (t.length < 12) t += Math.floor(rnd() * 36).toString(36); return t; }
   function roomId() {
@@ -150,7 +151,8 @@ function createHub(opt) {
       pushRoom(r);
     } else {
       p.sub = true;
-      emit(key, { type: 'rooms', rooms: listRooms() });
+      emit(key, { type: 'rooms', rooms: listRooms(), online: onlineCount() });
+      dirty();
     }
     return p;
   }
@@ -158,6 +160,7 @@ function createHub(opt) {
     const p = persons.get(key);
     if (!p || !p.connected) return;
     p.connected = false; p.dcAt = now();
+    dirty();
     const r = p.roomId ? rooms.get(p.roomId) : null;
     if (r) pushRoom(r);
   }
@@ -197,7 +200,7 @@ function createHub(opt) {
       if (r.hostSeat === i) reassignHost(r);
     }
     emit(key, { type: 'room', room: null });
-    emit(key, { type: 'rooms', rooms: listRooms() });
+    emit(key, { type: 'rooms', rooms: listRooms(), online: onlineCount() });
     if (humanSeats(r).length === 0) { closeRoom(r, '房間已經沒有玩家，自動關閉了'); return; }
     if (i >= 0) sys(r, p.name + (reason === 'timeout' ? ' 斷線太久，已離開' : reason === 'kicked' ? ' 被請出房間' : ' 離開了房間'));
     else sys(r, p.name + ' 不再觀戰');
@@ -219,7 +222,7 @@ function createHub(opt) {
       if (p) { p.roomId = null; p.sub = true; }
       emit(k, { type: 'closed', text, room: r.id });
       emit(k, { type: 'room', room: null });
-      emit(k, { type: 'rooms', rooms: listRooms() });
+      emit(k, { type: 'rooms', rooms: listRooms(), online: onlineCount() });
     }
     dirty();
   }
@@ -359,7 +362,7 @@ function createHub(opt) {
         }
         return;
       }
-      case 'lobbySub': p.sub = !r; emit(key, { type: 'rooms', rooms: listRooms() }); return;
+      case 'lobbySub': p.sub = !r; emit(key, { type: 'rooms', rooms: listRooms(), online: onlineCount() }); return;
       case 'create': {
         if (r) leaveRoom(key);
         p.name = cleanName(msg.name, p.name || randomName());
@@ -551,7 +554,7 @@ function createHub(opt) {
     if (lobbyDirty) {
       lobbyDirty = false;
       const list = listRooms();
-      for (const p of persons.values()) if (p.sub && p.connected && !p.roomId) emit(p.key, { type: 'rooms', rooms: list });
+      for (const p of persons.values()) if (p.sub && p.connected && !p.roomId) emit(p.key, { type: 'rooms', rooms: list, online: onlineCount() });
       onRoomsChanged(list);
     }
   }

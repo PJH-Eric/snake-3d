@@ -71,7 +71,7 @@ export function initOnline() {
     if (m.room && cur().screen === 'lobby' && m.room.phase !== 'playing') go('room');
     askInvite();
   });
-  net.on('rooms', m => online.set({ rooms: m.rooms || [] }));
+  net.on('rooms', m => online.set({ rooms: m.rooms || [], onlineCount: Number.isInteger(m.online) && m.online >= 0 ? m.online : null }));
   net.on('room', m => {
     const room = m.room || null;
     online.set({ room });

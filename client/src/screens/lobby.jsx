@@ -85,6 +85,7 @@ export function LobbyPage() {
   useLang();
   const d = useSave();
   const rooms = useOnline(s => s.rooms);
+  const onlineCount = useOnline(s => s.onlineCount);
   const notice = useOnline(s => s.notice);
   const inv = useOnline(s => s.invite);
   const status = useStatus();
@@ -130,7 +131,10 @@ export function LobbyPage() {
         <Button size="lg" variant="sky" disabled={!connected} onClick={() => setMake(true)}>{t('lobby.create')}</Button>
       </Row>
       <Panel>
-        <Heading level={3}>{t('lobby.rooms')}</Heading>
+        <Row justify="space-between">
+          <Heading level={3}>{t('lobby.rooms')}</Heading>
+          {Number.isInteger(onlineCount) && <Chip tone="green">{t('lobby.onlineCount', { n: onlineCount })}</Chip>}
+        </Row>
         {!connected ? <Text muted>{t('lobby.after')}</Text> : rooms.length === 0 ? <Text muted>{t('lobby.none')}</Text> : (
           <div className="room-list">
             {rooms.map(r => (
