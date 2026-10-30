@@ -127,6 +127,7 @@ function ResultModal({ res, kind, hud }) {
   const homeRun = () => (kind === 'online' ? leaveToHome() : go('home'));
   return (
     <Modal label={t('res.aria')} width={640} dismissible={false} maskClass="result-ov" className="result-modal">
+      <div data-result-share="" className="share-result-scope">
       <div className="res-title">{title}</div>
       {sub && <div className="res-sub">{sub}</div>}
       {res.mode === 'challenge' ? (
@@ -153,6 +154,7 @@ function ResultModal({ res, kind, hud }) {
       )}
       <Text small muted>{t(res.mode === 'challenge' ? 'res.time' : 'res.total', { m: mins, s: secs })}{kind !== 'challenge' && slot >= 0 && stat.play > 0 ? '　' + t('res.stat', { w: stat.win, p: stat.play }) : ''}</Text>
       {againDisabled && <Text small muted>{slot < 0 ? t('res.hostOnly') : t('res.hostNote')}</Text>}
+      </div>
       <div className="res-actions">
         <Button size="lg" disabled={againDisabled} onClick={again} autoFocus={!againDisabled}>{t('res.again')}</Button>
         <Button size="lg" variant="sky" onClick={second.run}>{second.label}</Button>
