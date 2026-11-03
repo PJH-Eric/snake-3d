@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import AI from '@shared/ai.js';
 import Rules from '@shared/rules.js';
-import { AnimalFace, Button, Chip, Heading, IconButton, Modal, Panel, Row, ScrollArea, Segmented, Select, Stack, Stepper, Text, TextField } from '../ui/kit.jsx';
+import { AnimalFace, Button, Chip, Disclosure, Heading, IconButton, Modal, Panel, Row, ScrollArea, Segmented, Select, Stack, Stepper, Text, TextField } from '../ui/kit.jsx';
 import { Screen } from '../shell.jsx';
 import { app, confirmBox, toast } from '../app.js';
 import { net } from '../net.js';
@@ -102,14 +102,14 @@ function Seat({ s, room, host }) {
           {s.kind === 'human' && !hostSeat && <Chip tone={s.ready ? 'green' : 'paper'}>{s.ready ? t('seat.ready') : t('seat.notReady')}</Chip>}
           {s.kind === 'human' && !s.connected && <Chip tone="red">{t('seat.off')}</Chip>}
         </Row>
-        {s.kind === 'ai' && canEdit && (
-          <Select ariaLabel={t('seat.lvl', { name })} value={s.level} options={levels} onChange={v => net.send({ type: 'aiLevel', seat: s.i, level: v })} />
-        )}
       </div>
       {canEdit && s.kind === 'ai' && <IconButton icon="trash" label={t('seat.remove', { name })} variant="paper" size={44} onClick={() => net.send({ type: 'removeai', seat: s.i })} />}
       {canEdit && s.kind === 'human' && !me && (
         <IconButton icon="logout" label={t('seat.kick', { name })} variant="danger" size={44}
           onClick={() => confirmBox({ title: t('seat.kickTitle', { name }), text: t('seat.kickText'), okLabel: t('seat.kickOk'), danger: true, onOk: () => net.send({ type: 'kick', seat: s.i }) })} />
+      )}
+      {s.kind === 'ai' && canEdit && (
+        <Select ariaLabel={t('seat.lvl', { name })} value={s.level} options={levels} onChange={v => net.send({ type: 'aiLevel', seat: s.i, level: v })} />
       )}
     </div>
   );
@@ -140,21 +140,30 @@ export function RoomPage() {
   else if (host && !room.canStart) hint = t('room.waitReady');
 
   return (
-    <Screen title={roomName(room.name)} width={1100} onBack={confirmLeave} backLabel={t('room.leave')}
-      actions={<Chip className="code-box">{room.id}</Chip>}>
-      <Row>
+    <Screen title={roomName(room.name)} width={1100} onBack={confirmLeave} backLabel={t('room.leave')} className="room-screen">
+      <Row className="room-status" gap={6}>
+        <Chip className="code-box">{room.id}</Chip>
         <Chip tone="sky">{host ? t('you.host') : player ? t('you.player') : t('you.spec')}</Chip>
         <Chip>{t('room.count', { p: filled, m: room.max })}</Chip>
         <Chip tone={lobby ? 'green' : 'orange'}>{t('phase.' + room.phase)}</Chip>
         {status !== 'open' && <Chip tone="red">{t('conn.retry')}</Chip>}
       </Row>
+      <Panel tone="cream" className="room-launch">
+        <Stack gap={4}>
+          <Heading level={3}>{t('phase.' + room.phase)}</Heading>
+          {hint && <Text small muted>{hint}</Text>}
+        </Stack>
+        {host && lobby && <Button size="lg" disabled={!room.canStart} onClick={() => { sound.sfx('go'); net.send({ type: 'start' }); }}>{t('room.startBtn')}</Button>}
+        {host && room.phase === 'finished' && <Button size="lg" onClick={rematch}>{t('res.again')}</Button>}
+        {!host && player && lobby && <Button size="lg" variant={mySeat && mySeat.ready ? 'paper' : 'primary'} onClick={() => net.send({ type: 'ready', value: !(mySeat && mySeat.ready) })}>{mySeat && mySeat.ready ? t('room.unready') : t('room.imReady')}</Button>}
+      </Panel>
       <div className="room-main">
         <Stack gap={14}>
-          <Panel>
+          <Panel className="room-seats stack">
             <Row justify="space-between"><Heading level={3}>{t('room.seats')}</Heading>{host && <Button size="sm" variant="sky" icon="link" onClick={() => setInviteOpen(true)}>{t('room.invite')}</Button>}</Row>
             <div className="seat-list">{room.seats.map(s => <Seat key={s.i} s={s} room={room} host={host} />)}</div>
           </Panel>
-          <Panel>
+          <Panel className="room-spectators stack">
             <Heading level={3}>{t('spec.title')}</Heading>
             {room.spectators.length === 0 ? <Text muted small>{t('spec.none')}</Text> : <Row gap={6}>{room.spectators.map(p => <Chip key={p.pid} icon="eye">{p.name}</Chip>)}</Row>}
             {!host && lobby && player && <Row><Button size="sm" variant="paper" onClick={() => net.send({ type: 'watch' })}>{t('room.toSpec')}</Button></Row>}
@@ -164,8 +173,12 @@ export function RoomPage() {
               {!lobby && <Text small muted>{t('room.noSwitch')}</Text>}
             </Row>}
           </Panel>
-          <Panel>
-            <Heading level={3}>{t('room.rules')}</Heading>
+          <Disclosure title={t('room.rules')} summary={<Row gap={6}>
+            <Chip>{t('rule.speed')} · {speedName(st.speed)}</Chip>
+            <Chip>{t('rule.obs')} · {obstacleName(st.obstacles)}</Chip>
+            <Chip>{timeName(st.timeLimit)}</Chip>
+            <Chip tone="green">{themeName(st.theme)}</Chip>
+          </Row>}>
             {!host && <Text small muted>{t('room.hostOnly')}</Text>}
             <div className="rule-grid">
               <Segmented label={t('rule.speed')} value={st.speed} onChange={v => patch({ speed: v })} options={Rules.SPEED_ORDER.map(v => ({ value: v, label: speedName(v), disabled: !host || !lobby }))} />
@@ -174,20 +187,12 @@ export function RoomPage() {
               <Select label={t('rule.theme')} value={st.theme} disabled={!host || !lobby} onChange={v => patch({ theme: v })} options={THEME_OPTIONS.map(v => ({ value: v, label: themeName(v) }))} />
               {host && lobby && <Stepper label={t('room.max')} value={room.max} min={2} max={8} onChange={v => patch({ max: v })} format={v => t('mk.n', { n: v })} />}
             </div>
-          </Panel>
-          <Panel tone="cream">
-            {hint && <Text>{hint}</Text>}
-            <Row>
-              {host && lobby && <Button size="lg" disabled={!room.canStart} onClick={() => { sound.sfx('go'); net.send({ type: 'start' }); }}>{t('room.startBtn')}</Button>}
-              {host && room.phase === 'finished' && <Button size="lg" onClick={rematch}>{t('res.again')}</Button>}
-              {!host && player && lobby && <Button size="lg" variant={mySeat && mySeat.ready ? 'paper' : 'primary'} onClick={() => net.send({ type: 'ready', value: !(mySeat && mySeat.ready) })}>{mySeat && mySeat.ready ? t('room.unready') : t('room.imReady')}</Button>}
-              <Button variant="danger" onClick={confirmLeave}>{t('room.leave')}</Button>
-            </Row>
-          </Panel>
+          </Disclosure>
+          <Button variant="paper" icon="logout" onClick={confirmLeave}>{t('room.leave')}</Button>
         </Stack>
-        <Panel className="stack">
+        <Panel className="stack room-chat">
           <Heading level={3}>{t('room.chat')}</Heading>
-          <ChatBox height={420} />
+          <ChatBox />
         </Panel>
       </div>
       {inviteOpen && <InviteModal onClose={() => setInviteOpen(false)} />}

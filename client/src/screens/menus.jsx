@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import AI from '@shared/ai.js';
 import Rules from '@shared/rules.js';
-import { AnimalFace, Button, Chip, Heading, Icon, Keycap, Panel, RadioCard, Row, Segmented, Select, Stack, Stepper, Text, TextField } from '../ui/kit.jsx';
+import { AnimalFace, Button, Chip, Disclosure, Heading, Icon, Keycap, Panel, RadioCard, Row, Segmented, Select, Stack, Stepper, Text, TextField } from '../ui/kit.jsx';
 import { Screen } from '../shell.jsx';
 import { go, myName } from '../app.js';
 import { getBest, update, useSave } from '../store.js';
@@ -165,13 +165,19 @@ export function SoloPage() {
     setLevels(l.slice(0, n));
   };
   return (
-    <Screen title={t('solo.title')} onBack={() => go('home')} width={1000} actions={<Button variant="orange" onClick={startSolo}>{t('common.start')}</Button>}>
-      <div className="grid2">
+    <Screen title={t('solo.title')} onBack={() => go('home')} width={1000} className="room-screen solo-screen">
+      <Panel tone="cream" className="room-launch">
+        <Row gap={8}>
+          <AnimalFace animal={d.animal} size={48} />
+          <Stack gap={2}><Text>{myName()}</Text><Text small muted>{t('solo.num')} · {so.levels.length} · {timeName(so.timeLimit)}</Text></Stack>
+        </Row>
+        <Button size="lg" variant="orange" onClick={startSolo}>{t('common.start')}</Button>
+      </Panel>
+      <div className="grid2 solo-main">
         <Stack gap={14}>
-          <Panel><Heading level={3}>{t('ch.you')}</Heading><Profile /></Panel>
-          <Panel>
+          <Panel className="solo-opponents stack">
             <Row justify="space-between"><Heading level={3}>{t('solo.opps')}</Heading><Chip tone="sky">{1 + so.levels.length <= 4 ? t('solo.mid') : t('solo.big')}</Chip></Row>
-            <Row gap={6}><AnimalFace animal={d.animal} size={44} />{so.levels.map((_, i) => <AnimalFace key={i} animal={animals[i]} size={44} />)}</Row>
+            <Row gap={6} className="solo-lineup"><AnimalFace animal={d.animal} size={44} />{so.levels.map((_, i) => <AnimalFace key={i} animal={animals[i]} size={44} />)}</Row>
             <Stepper label={t('solo.num')} value={so.levels.length} min={1} max={7} onChange={setCount} />
             <Segmented label={t('solo.diff')} value={same ? so.levels[0] : null} options={levelOptions} onChange={v => setLevels(so.levels.map(() => v))} />
             {same && <Text small muted>{levelHint(so.levels[0])}</Text>}
@@ -185,13 +191,18 @@ export function SoloPage() {
               </div>
             ))}
           </Panel>
+          <Disclosure title={t('ch.you')} summary={<Text small muted>{myName()} · {animalName(d.animal)}</Text>}><Profile /></Disclosure>
         </Stack>
         <Stack gap={14}>
-          <Panel>
-            <Heading level={3}>{t('ch.rules')}</Heading>
+          <Disclosure title={t('ch.rules')} summary={<Row gap={6}>
+            <Chip>{t('rule.speed')} · {speedName(so.speed)}</Chip>
+            <Chip>{t('rule.obs')} · {obstacleName(so.obstacles)}</Chip>
+            <Chip>{timeName(so.timeLimit)}</Chip>
+            <Chip tone="green">{themeName(so.theme)}</Chip>
+          </Row>}>
             <RulesPanel speed={so.speed} obstacles={so.obstacles} timeLimit={so.timeLimit} theme={so.theme} onChange={(k, v) => update({ solo: { ...so, [k]: v } })} />
-          </Panel>
-          <Panel><Heading level={3}>{t('solo.win')}</Heading><Text>{t('solo.win.p')}</Text></Panel>
+          </Disclosure>
+          <Panel className="stack"><Heading level={3}>{t('solo.win')}</Heading><Text small muted>{t('solo.win.p')}</Text></Panel>
         </Stack>
       </div>
     </Screen>

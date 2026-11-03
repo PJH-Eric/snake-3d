@@ -67,6 +67,24 @@ export function Row({ children, className = '', gap, wrap = true, align, justify
 }
 export function Stack({ children, className = '', gap }) { return <div className={`stack ${className}`} style={{ gap }}>{children}</div>; }
 
+/** 可收合的房間設定；保留標題、目前設定摘要與鍵盤操作。 */
+export function Disclosure({ title, summary, children }) {
+  const [open, setOpen] = useState(false);
+  const id = useId();
+  return (
+    <Panel className={'disclosure ' + (open ? 'is-open' : '')}>
+      <h3 className="disclosure-heading">
+        <button type="button" className="disclosure-toggle" aria-expanded={open} aria-controls={id}
+          onClick={() => { sound.sfx('click'); setOpen(v => !v); }}>
+          <span>{title}</span><Icon name="chevron" size={22} />
+        </button>
+      </h3>
+      {summary && <div className="disclosure-summary">{summary}</div>}
+      <div id={id} hidden={!open} className="disclosure-content">{open && children}</div>
+    </Panel>
+  );
+}
+
 /* ---------- 動物臉 ---------- */
 export function AnimalFace({ animal, size = 48, className = '' }) {
   const a = animalDef(animal);
@@ -296,7 +314,7 @@ export function Select({ value, onChange, options, label, ariaLabel, disabled, c
   const body = (
     <div className={'select ' + className}>
       <button ref={btn} type="button" id={id} className="select-btn" role="combobox" aria-haspopup="listbox" aria-expanded={open} aria-controls={listId}
-        aria-label={label ? undefined : ariaLabel} disabled={disabled} onKeyDown={key} onClick={() => { sound.sfx('click'); setOpen(o => !o); }}>
+        aria-labelledby={label ? id + '-label' : undefined} aria-label={label ? undefined : ariaLabel} disabled={disabled} onKeyDown={key} onClick={() => { sound.sfx('click'); setOpen(o => !o); }}>
         <span className="select-val">{cur ? cur.label : t('ui.choose')}</span>
         <Icon name="chevron" size={20} />
       </button>
@@ -318,7 +336,7 @@ export function Select({ value, onChange, options, label, ariaLabel, disabled, c
     </div>
   );
   if (!label) return body;
-  return <div className="field-col"><div className="field-label"><span>{label}</span></div>{body}</div>;
+  return <div className="field-col"><div className="field-label"><span id={id + '-label'}>{label}</span></div>{body}</div>;
 }
 
 /* ---------- 文字輸入 ---------- */

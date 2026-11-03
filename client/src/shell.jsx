@@ -8,9 +8,9 @@ import { resetSettings, update, useSave } from './store.js';
 import { toast } from './app.js';
 
 /** 畫面外框：標題列＋可捲動內容（內容超出視窗時用自訂捲軸）。 */
-export function Screen({ title, onBack, backLabel, children, width = 880, actions }) {
+export function Screen({ title, onBack, backLabel, children, width = 880, actions, className = '' }) {
   return (
-    <main className="screen">
+    <main className={`screen ${className}`}>
       <div className="screen-body">
         <ScrollArea className="screen-scroll" label={title}>
           <div className="screen-inner" style={{ '--mw': width + 'px' }}>

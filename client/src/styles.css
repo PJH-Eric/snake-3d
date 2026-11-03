@@ -203,6 +203,56 @@ button { cursor: pointer; }
 .room-main { display: grid; gap: 14px; grid-template-columns: minmax(0, 1fr); }
 @media (min-width: 900px) { .room-main { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); } }
 
+/* ---------- 房間：手機先呈現主要操作，設定獨立收合 ---------- */
+.room-screen .page-title { align-items: flex-start; }
+.room-screen .page-title .hd { align-self: center; }
+.room-status .code-box { font-size: 1rem; letter-spacing: 0.14em; background: var(--cream); }
+.room-screen .panel { padding: 18px; }
+.room-launch { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: linear-gradient(120deg, #fff4d2, #e8f5d8); }
+.room-launch > .stack, .room-launch > .row { flex: 1; min-width: 0; }
+.room-launch > .btn { flex: 0 0 auto; }
+.room-seats .seat.mine { border-color: #678047; background: #f0f7df; }
+.room-seats .seat:not(.empty) { display: grid; grid-template-columns: 52px minmax(0, 1fr) auto; }
+.room-seats .seat .who > span { line-height: 1.4; }
+.room-seats .seat .chip { white-space: normal; }
+.room-seats .seat .who > .row { row-gap: 4px; }
+.room-seats .seat > .select { grid-column: 1 / -1; margin-top: 2px; }
+.room-seats .seat.empty { background: #f7f5eb; border-color: #b8ab91; }
+.room-screen .chip { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.room-screen .seg { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.room-screen .seg-item { min-width: 0; min-height: 48px; padding: 6px 8px; overflow-wrap: anywhere; }
+.room-screen .seg:has(> :nth-child(4)) { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.room-screen .stepper .ibtn, .room-screen .seat .ibtn { width: 48px; height: 48px; }
+.room-screen .btn-sm { min-height: 48px; }
+.room-chat { align-self: start; }
+.room-chat .chat { height: clamp(320px, 52dvh, 480px); }
+.disclosure-heading { margin: -6px 0; font-size: 1.2rem; }
+.disclosure-toggle { display: flex; align-items: center; justify-content: space-between; gap: 12px; width: 100%; min-height: 48px; padding: 6px 0; border: 0; background: transparent; font: inherit; font-weight: 800; text-align: left; }
+.disclosure-toggle > span { min-width: 0; overflow-wrap: anywhere; }
+.disclosure-toggle .icon { flex: none; transition: transform 0.15s; }
+.disclosure.is-open .disclosure-toggle .icon { transform: rotate(180deg); }
+.disclosure-summary { margin-top: 10px; }
+.disclosure-content:not([hidden]) { display: flex; flex-direction: column; gap: 14px; margin-top: 16px; padding-top: 16px; border-top: 2px dashed var(--sand); }
+.solo-lineup { padding: 10px; border-radius: 14px; background: #f1f6e7; }
+.solo-opponents .opp { padding: 12px; border: 2px solid var(--sand); border-radius: 14px; background: #fff; gap: 8px; }
+.solo-opponents .opp .seg { flex: 1 0 100%; width: 100%; margin-left: 0; }
+
+@media (max-width: 700px) {
+  .room-screen .screen-inner { gap: 12px; padding-right: 18px; padding-left: 14px; }
+  .room-screen .panel { padding: 14px; border-radius: 18px; }
+  .room-screen .page-title { gap: 10px; }
+  .room-screen .page-title .hd { font-size: 1.4rem; line-height: 1.35; }
+  .room-launch { flex-direction: column; align-items: stretch; gap: 12px; }
+  .room-launch > .btn { width: 100%; min-height: 56px; font-size: 1.15rem; }
+  .room-seats .seat-list { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+  .room-seats .seat:not(.empty) { grid-column: 1 / -1; }
+  .room-seats .seat.empty { flex-direction: column; gap: 8px; padding: 12px 6px; }
+  .room-seats .seat.empty .btn { width: 100%; padding-right: 6px; padding-left: 6px; }
+  .room-screen .rule-grid { grid-template-columns: minmax(0, 1fr); gap: 18px; }
+  .room-chat .chat { height: 380px; }
+  .solo-main { grid-template-columns: minmax(0, 1fr); }
+}
+
 /* ---------- 對戰畫面 ---------- */
 .game { position: absolute; inset: 0; display: flex; background: var(--sky-bg, #cdeefa); overflow: hidden; touch-action: none; user-select: none; -webkit-user-select: none; }
 .game-main { --stick-size: 150px; --knob-size: 70px; --boost-size: 124px; --control-edge: 26px; position: relative; flex: 1; min-width: 0; height: 100%; overflow: hidden; }
