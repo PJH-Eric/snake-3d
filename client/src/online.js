@@ -6,6 +6,7 @@ import { getSave } from './store.js';
 import { serverMessage, t } from './i18n.js';
 import * as sound from './sound.js';
 import { roomResponse } from './analytics.js';
+import { initLobbyChat } from './lobbychat.js';
 
 export const online = createStore({
   room: null, rooms: [], notice: '', chat: [], inGame: false, mySlot: -1, startInfo: null, result: null,
@@ -63,6 +64,7 @@ function cleanUrl() {
 }
 
 export function initOnline() {
+  initLobbyChat();
   net.onStatus(() => { repaintBanner(); askInvite(); });
   net.onOutage = () => app.set({ outage: true });
 

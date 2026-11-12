@@ -10,6 +10,7 @@
  */
 import Rules from '../../shared/rules.js';
 import AI from '../../shared/ai.js';
+import LobbyChatCore from './lobby-chat.cjs';
 
 const ANIMALS = ['cat', 'dog', 'bunny', 'bear', 'panda', 'fox', 'frog', 'penguin'];
 const ANIMAL_NAMES = { cat: '小貓', dog: '小狗', bunny: '小兔', bear: '小熊', panda: '熊貓', fox: '狐狸', frog: '青蛙', penguin: '企鵝' };
@@ -50,6 +51,8 @@ function createHub(opt) {
 
   /* ---------- 工具 ---------- */
   const emit = (key, msg) => emitOut(key, msg);
+  /* 大廳聊天室（與房間聊天分開；最近 50 則只存在記憶體） */
+  const lobbyChat = LobbyChatCore.createHub({ send: (key, msg) => emit(key, msg), key: 'type' });
   function onlineCount() { return Array.from(persons.values()).filter(p => p.connected).length; }
   function randomName() { return ADJ[Math.floor(rnd() * ADJ.length)] + ANIMAL_NAMES[ANIMALS[Math.floor(rnd() * ANIMALS.length)]]; }
   function token() { let t = ''; while (t.length < 12) t += Math.floor(rnd() * 36).toString(36); return t; }
@@ -157,6 +160,7 @@ function createHub(opt) {
     return p;
   }
   function disconnect(key) {
+    lobbyChat.drop(key);
     const p = persons.get(key);
     if (!p || !p.connected) return;
     p.connected = false; p.dcAt = now();
@@ -362,6 +366,7 @@ function createHub(opt) {
         }
         return;
       }
+      case 'lobbychat': lobbyChat.handle(key, msg); return;
       case 'lobbySub': p.sub = !r; emit(key, { type: 'rooms', rooms: listRooms(), online: onlineCount() }); return;
       case 'create': {
         if (r) leaveRoom(key);
@@ -373,6 +378,7 @@ function createHub(opt) {
         emit(key, { type: 'joined', room: nr.id, role: 'player', note: '' });
         sys(nr, p.name + ' 建立了房間');
         pushRoom(nr);
+        lobbyChat.roomOpened({ code: nr.id, roomName: nr.name, host: p.name });
         return;
       }
       case 'quick': {
@@ -388,6 +394,7 @@ function createHub(opt) {
           emit(key, { type: 'joined', room: nr.id, role: 'player', note: '目前沒有可加入的房間，幫你開了一間' });
           sys(nr, p.name + ' 建立了房間');
           pushRoom(nr);
+          lobbyChat.roomOpened({ code: nr.id, roomName: nr.name, host: p.name });
         }
         return;
       }

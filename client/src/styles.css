@@ -359,3 +359,13 @@ button { cursor: pointer; }
 }
 
 .mask.result-ov { background: rgba(52, 36, 20, 0.34); }
+
+/* ---------- 3D 貪吃蛇：動物園木牌配色 ---------- */
+body .lc-root {
+  --lc-accent: var(--orange-d); --lc-accent-ink: #fff;
+  --lc-panel-bg: var(--paper); --lc-panel-solid: var(--paper);
+  --lc-ink: var(--ink); --lc-muted: var(--ink-soft); --lc-line: var(--sand);
+  --lc-field-bg: #fff; --lc-sys-bg: var(--cream); --lc-name: var(--green-d);
+  --lc-font: var(--font); --lc-radius: var(--r); --lc-z: 95;
+}
+body .lc-bubble, body .lc-panel { border: var(--bd) solid var(--ink); box-shadow: var(--shadow); }

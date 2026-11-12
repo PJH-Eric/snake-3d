@@ -6,6 +6,7 @@ import { LANGS, LANG_NAMES, getLang, setLang, t, useLang } from './i18n.js';
 import * as sound from './sound.js';
 import { resetSettings, update, useSave } from './store.js';
 import { toast } from './app.js';
+import { lobbyChat } from './lobbychat.js';
 
 /** 畫面外框：標題列＋可捲動內容（內容超出視窗時用自訂捲軸）。 */
 export function Screen({ title, onBack, backLabel, children, width = 880, actions, className = '' }) {
@@ -86,10 +87,11 @@ export function TopRight() {
 export function SettingsModal({ onClose }) {
   const d = useSave();
   useLang();
+  const [chatOn, setChatOn] = useState(() => (lobbyChat ? lobbyChat.isEnabled() : true));
   const onOff = (key, label, hint) => <Toggle checked={d[key]} onChange={v => update({ [key]: v })} label={label} hint={hint} />;
   return (
     <Modal title={t('set.title')} onClose={onClose} width={620} className="settings"
-      footer={<><Button variant="paper" onClick={() => { resetSettings(); toast(t('set.reset.done'), 2.4); }}>{t('set.reset')}</Button><Button onClick={onClose}>{t('common.done')}</Button></>}>
+      footer={<><Button variant="paper" onClick={() => { resetSettings(); if (lobbyChat) { lobbyChat.setEnabled(true); setChatOn(true); } toast(t('set.reset.done'), 2.4); }}>{t('set.reset')}</Button><Button onClick={onClose}>{t('common.done')}</Button></>}>
       <Heading level={3}>{t('set.sound')}</Heading>
       {onOff('bgm', t('set.bgm'))}
       <Slider value={d.bgmVol} onChange={v => update({ bgmVol: v })} label={t('set.bgmVol')} disabled={!d.bgm} />
@@ -107,6 +109,7 @@ export function SettingsModal({ onClose }) {
         options={[{ value: 'left', label: t('set.side.left') }, { value: 'right', label: t('set.side.right') }]} />}
       {onOff('vibrate', t('set.vibrate'))}
       {onOff('reduceMotion', t('set.calm'))}
+      {lobbyChat && <Toggle checked={chatOn} onChange={v => { lobbyChat.setEnabled(v); setChatOn(v); }} label={lobbyChat.text('set')} hint={lobbyChat.text('setSub')} />}
       <Text small muted>{t('set.keys')} <Keycap>←↑↓→</Keycap> <Keycap>WASD</Keycap> <Keycap>Space</Keycap> <Keycap>Shift</Keycap></Text>
     </Modal>
   );
