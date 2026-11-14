@@ -51,7 +51,7 @@ function createHub(opt) {
 
   /* ---------- 工具 ---------- */
   const emit = (key, msg) => emitOut(key, msg);
-  /* 大廳聊天室（與房間聊天分開；最近 50 則只存在記憶體） */
+  /* 大廳聊天室（與房間聊天分開；即時傳送訊息，不載入歷史訊息） */
   const lobbyChat = LobbyChatCore.createHub({ send: (key, msg) => emit(key, msg), key: 'type' });
   function onlineCount() { return Array.from(persons.values()).filter(p => p.connected).length; }
   function randomName() { return ADJ[Math.floor(rnd() * ADJ.length)] + ANIMAL_NAMES[ANIMALS[Math.floor(rnd() * ANIMALS.length)]]; }
