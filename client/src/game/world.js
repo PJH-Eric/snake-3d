@@ -404,12 +404,15 @@ export class World3D {
     const a = animalDef(p.animal), g = this.geo, scene = this.scene;
     const head = new THREE.Group();
     const body = this.mat(a.body), white = this.mat('#ffffff'), pupil = this.mat('#1d1630');
-    const P = (geo, mat, pos, sc, rot, sh = true) => this.part(head, geo, mat, pos, sc, rot, sh);
+    const upperJaw = new THREE.Group(), jaw = new THREE.Group();
+    jaw.position.set(0, MOUTH_Y, -MOUTH_RADIUS);
+    upperJaw.position.copy(jaw.position);
+    head.add(upperJaw, jaw);
+    const P = (geo, mat, [x, y, z], sc, rot, sh = true) => (
+      this.part(upperJaw, geo, mat, [x, y - MOUTH_Y, z + MOUTH_RADIUS], sc, rot, sh)
+    );
     const headScale = [HEAD_WIDTH, HEAD_HEIGHT, HEAD_WIDTH];
     P(g.headTop, body, [0, HEAD_CENTER_Y, 0], headScale);
-    const jaw = new THREE.Group();
-    jaw.position.set(0, MOUTH_Y, -MOUTH_RADIUS);
-    head.add(jaw);
     this.part(jaw, g.headBottom, body, [0, HEAD_CENTER_Y - MOUTH_Y, MOUTH_RADIUS], headScale);
     const mouth = this.mat('#57283d');
     const palate = P(g.mouth, mouth, [0, MOUTH_Y, 0], [1, 1, 1], [90, 0, 0], false);
@@ -451,7 +454,7 @@ export class World3D {
 
     const colors = slotColor(p.slot);
     const sn = {
-      slot: p.slot, animal: p.animal, head, a, jaw, palate, inside, eaten: p.eaten, biteUntil: 0,
+      slot: p.slot, animal: p.animal, head, a, upperJaw, jaw, palate, inside, eaten: p.eaten, biteUntil: 0,
       bodyA: this.instanced(g.sphere, this.mat(a.seg0), BODY_CAP, true),
       bodyB: this.instanced(g.sphere, this.mat(a.seg1), BODY_CAP, true),
       tail: new THREE.Mesh(g.sphere, this.mat(a.tail)),
@@ -518,6 +521,7 @@ export class World3D {
     }
     const angle = sn.jaw.rotation.x;
     sn.jaw.rotation.x = open ? Math.min(JAW_OPEN, angle + dt * 6) : Math.max(0, angle - dt * 3);
+    sn.upperJaw.rotation.x = -sn.jaw.rotation.x;
     sn.palate.visible = sn.inside.visible = sn.jaw.rotation.x > 0.01;
   }
 
