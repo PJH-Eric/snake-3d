@@ -10,6 +10,15 @@ const FOV = 40;
 const BODY_CAP = 520;
 const FOOD_CAP = 300;
 const PUFF_CAP = 320;
+const HEAD_CENTER_Y = 0.05;
+const HEAD_WIDTH = 2.4;
+const HEAD_HEIGHT = 2.2;
+const MOUTH_Y = -0.26;
+const MOUTH_CUT = Math.acos((MOUTH_Y - HEAD_CENTER_Y) / (HEAD_HEIGHT * 0.5));
+const MOUTH_RADIUS = Math.sin(MOUTH_CUT) * HEAD_WIDTH * 0.5;
+const BITE_LOOKAHEAD = 0.22;
+const BITE_HOLD = 0.16;
+const JAW_OPEN = 0.4;
 const tmpM = new THREE.Matrix4(), tmpQ = new THREE.Quaternion(), tmpP = new THREE.Vector3(), tmpS = new THREE.Vector3(), tmpE = new THREE.Euler(), tmpC = new THREE.Color();
 const ZERO_Q = new THREE.Quaternion();
 /* 場地道具（純視覺；碰撞與果實規則由 shared/rules.js 決定）：石頭會擋路，草叢與小花可以直接穿過 */
@@ -138,8 +147,12 @@ export class World3D {
     sun.shadow.camera.near = 1; sun.shadow.camera.far = 90;
     this.scene.add(sun, sun.target);
 
+    const sides = low ? 10 : 16;
     this.geo = {
-      sphere: this.own(new THREE.SphereGeometry(0.5, low ? 10 : 16, low ? 7 : 10)),
+      sphere: this.own(new THREE.SphereGeometry(0.5, sides, low ? 7 : 10)),
+      headTop: this.own(new THREE.SphereGeometry(0.5, sides, low ? 5 : 7, 0, Math.PI * 2, 0, MOUTH_CUT)),
+      headBottom: this.own(new THREE.SphereGeometry(0.5, sides, low ? 3 : 5, 0, Math.PI * 2, MOUTH_CUT, Math.PI - MOUTH_CUT)),
+      mouth: this.own(new THREE.CircleGeometry(MOUTH_RADIUS, sides)),
       cone: this.own(new THREE.ConeGeometry(0.5, 1, 12)),
       cyl: this.own(new THREE.CylinderGeometry(0.5, 0.5, 1, 10)),
       star: this.own(starGeometry())
@@ -392,9 +405,19 @@ export class World3D {
     const head = new THREE.Group();
     const body = this.mat(a.body), white = this.mat('#ffffff'), pupil = this.mat('#1d1630');
     const P = (geo, mat, pos, sc, rot, sh = true) => this.part(head, geo, mat, pos, sc, rot, sh);
-    P(g.sphere, body, [0, 0.05, 0], [2.4, 2.2, 2.4]);
-    if (a.muzzle) P(g.sphere, this.mat(a.muzzle), [0, -0.28, 0.85], [1.2, 0.85, 1.0]);
-    if (a.beak) P(g.cone, this.mat(a.beak), [0, -0.12, 1.28], [0.7, 0.7, 0.5], [90, 0, 0]);
+    const headScale = [HEAD_WIDTH, HEAD_HEIGHT, HEAD_WIDTH];
+    P(g.headTop, body, [0, HEAD_CENTER_Y, 0], headScale);
+    const jaw = new THREE.Group();
+    jaw.position.set(0, MOUTH_Y, -MOUTH_RADIUS);
+    head.add(jaw);
+    this.part(jaw, g.headBottom, body, [0, HEAD_CENTER_Y - MOUTH_Y, MOUTH_RADIUS], headScale);
+    const mouth = this.mat('#57283d');
+    const palate = P(g.mouth, mouth, [0, MOUTH_Y, 0], [1, 1, 1], [90, 0, 0], false);
+    const inside = this.part(jaw, g.mouth, mouth, [0, 0, MOUTH_RADIUS], [1, 1, 1], [-90, 0, 0], false);
+    this.part(inside, g.sphere, this.mat('#fa8297'), [0, -0.39, 0.02], [0.92, 1.1, 0.16], null, false);
+    palate.visible = inside.visible = false;
+    if (a.muzzle) P(g.sphere, this.mat(a.muzzle), [0, -0.06, 0.88], [1.2, 0.4, 1.0]);
+    if (a.beak) P(g.cone, this.mat(a.beak), [0, 0, 1.25], [0.7, 0.7, 0.5], [90, 0, 0]);
     else if (a.nose) P(g.sphere, this.mat(a.nose), [0, -0.02, 1.18], [0.36, 0.28, 0.3]);
     if (a.patches) for (const sx of [-1, 1]) P(g.sphere, this.mat(a.earCol), [sx * 0.62, 0.28, 0.82], [0.6, 0.78, 0.3], [0, 0, sx * 20]);
     if (a.eyesTop) {
@@ -428,7 +451,7 @@ export class World3D {
 
     const colors = slotColor(p.slot);
     const sn = {
-      slot: p.slot, animal: p.animal, head, a,
+      slot: p.slot, animal: p.animal, head, a, jaw, palate, inside, eaten: p.eaten, biteUntil: 0,
       bodyA: this.instanced(g.sphere, this.mat(a.seg0), BODY_CAP, true),
       bodyB: this.instanced(g.sphere, this.mat(a.seg1), BODY_CAP, true),
       tail: new THREE.Mesh(g.sphere, this.mat(a.tail)),
@@ -474,13 +497,38 @@ export class World3D {
     return tmpP.set(x, y, z);
   }
 
-  drawSnake(p, sn, a) {
+  drawMouth(view, p, sn, ang, dt) {
+    if (p.eaten > sn.eaten) sn.biteUntil = this.clock + BITE_HOLD;
+    sn.eaten = p.eaten;
+    let open = false;
+    if (view.phase === 'play') {
+      const speed = (Rules.SPEEDS[view.speed] || Rules.SPEEDS.normal).v;
+      const levelSpeed = view.mode === 'challenge' ? Math.min(1.5, 1 + 0.04 * Math.floor(p.eaten / 5)) : 1;
+      const reach = speed * levelSpeed * (p.boosting ? Rules.BOOST_MUL : 1) * BITE_LOOKAHEAD;
+      const dx = Math.cos(ang), dz = Math.sin(ang);
+      /* 用進食半徑檢查前方短路徑，下一顆果實接得上時就維持張嘴。 */
+      open = this.clock < sn.biteUntil || view.foods.some(f => {
+        const x = f.x - sn.head.position.x, z = f.z - sn.head.position.z;
+        const forward = x * dx + z * dz;
+        if (forward < 0) return false;
+        const rad = p.r + Rules.FOOD[f.type].rad + 0.15;
+        const beyond = Math.max(0, forward - reach), side = x * dz - z * dx;
+        return beyond * beyond + side * side <= rad * rad;
+      });
+    }
+    const angle = sn.jaw.rotation.x;
+    sn.jaw.rotation.x = open ? Math.min(JAW_OPEN, angle + dt * 6) : Math.max(0, angle - dt * 3);
+    sn.palate.visible = sn.inside.visible = sn.jaw.rotation.x > 0.01;
+  }
+
+  drawSnake(view, p, sn, a, dt) {
     const n = p.pts.length / 2, r = p.r, prev = p.prevPts;
     const hp = this.segPos(p.pts, prev, 0, a, r * 1.05);
     const ang = p.prevAng != null && p.prevAng !== p.ang ? p.prevAng + Rules.wrapAng(p.ang - p.prevAng) * a : p.ang;
     sn.head.position.copy(hp);
     sn.head.rotation.y = Math.PI / 2 - ang;
     sn.head.scale.setScalar(r);
+    this.drawMouth(view, p, sn, ang, dt);
     const headPos = hp.clone();
     let ia = 0, ib = 0;
     const taperN = Math.min(8, Math.max(1, n - 1));
@@ -652,7 +700,7 @@ export class World3D {
       sn.head.visible = sn.tag.visible = !!show;
       sn.arrow.visible = !!show && p.slot === selfSlot;
       if (!show) { sn.bodyA.count = sn.bodyB.count = 0; sn.tail.visible = false; continue; }
-      this.drawSnake(p, sn, a);
+      this.drawSnake(view, p, sn, a, dt);
     }
     this.drawFoods(view);
     this.animateStage(dt);
