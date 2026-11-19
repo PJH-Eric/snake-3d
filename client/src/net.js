@@ -94,9 +94,9 @@ export class Net {
     const started = this.now();
     while (this.wantOpen && mine === this.session) {
       let ok = false;
-      let base;
+      let base = this.cfg.serverUrl;
       try {
-        base = await (globalThis.GameBackend?.select(this.cfg.serverUrl) ?? this.cfg.serverUrl);
+        if (globalThis.GameBackend?.canRoute(base)) base = await globalThis.GameBackend.select(base);
         if (!this.wantOpen || mine !== this.session) return;
         const ctl = new AbortController();
         const timer = setTimeout(() => ctl.abort(), 8000);
