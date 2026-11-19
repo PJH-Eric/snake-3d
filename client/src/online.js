@@ -166,7 +166,7 @@ export function inviteLink(token) {
   u.searchParams.set('room', room.id);
   u.searchParams.set('invite', token);
   if (config.source === 'query' && config.serverUrl) u.searchParams.set('server', config.serverUrl);
-  return u.toString();
+  return window.GameBackend?.pinInvite(u) ?? u.toString();
 }
 
 /** 網址帶 ?room=&invite= 時進入邀請流程：只停在大廳，確認暱稱後才加入。 */

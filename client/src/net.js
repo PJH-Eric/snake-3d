@@ -93,14 +93,21 @@ export class Net {
     this.setStatus('connecting');
     const started = this.now();
     while (this.wantOpen && mine === this.session) {
-      const ctl = new AbortController();
-      const timer = setTimeout(() => ctl.abort(), 8000);
       let ok = false;
-      try { const r = await this.fetch(this.cfg.serverUrl + '/health', { signal: ctl.signal, cache: 'no-store' }); ok = r.ok; } catch { ok = false; }
-      clearTimeout(timer);
+      let base;
+      try {
+        base = await (globalThis.GameBackend?.select(this.cfg.serverUrl) ?? this.cfg.serverUrl);
+        if (!this.wantOpen || mine !== this.session) return;
+        const ctl = new AbortController();
+        const timer = setTimeout(() => ctl.abort(), 8000);
+        try {
+          const response = await this.fetch(base + '/health', { signal: ctl.signal, cache: 'no-store' });
+          ok = response.ok;
+        } finally { clearTimeout(timer); }
+      } catch { /* 兩個後端目前都無法連線 */ }
       /* 離開或重連後，舊請求即使失敗也不能覆寫新 session 的狀態 */
       if (!this.wantOpen || mine !== this.session) return;
-      if (ok) { this.connect(); return; }
+      if (ok) { this.connect(base); return; }
       if (this.now() - started > 90) break;
       this.setStatus('waking', Math.round(this.now() - started));
       await new Promise(res => { this.wakeTimer = setTimeout(res, 2500); });
@@ -109,8 +116,8 @@ export class Net {
     if (this.wantOpen && mine === this.session) { this.setStatus('offline'); this.scheduleRetry(); }
   }
 
-  connect() {
-    const s = this.makeSocket(wsUrl(this.cfg.serverUrl));
+  connect(base = this.cfg.serverUrl) {
+    const s = this.makeSocket(wsUrl(base));
     this.sock = s;
     this.setStatus('connecting');
     s.onopen = () => {
