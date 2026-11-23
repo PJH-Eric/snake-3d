@@ -25,3 +25,7 @@ client/.shots/
 .vs/
 .idea/
 .vscode/
+
+/cloudflare/node_modules/
+
+/cloudflare/dist/
