@@ -129,10 +129,19 @@ export function GlobalLayer() {
       {outage && (
         <Modal title={t('net.outage.title')} width={520} onClose={() => app.set({ outage: false })}
           footer={<Button onClick={() => app.set({ outage: false })}>{t('common.ok')}</Button>}>
-          <Text>{t('net.outage.message')}</Text>
+          <Text>{sponsorParts(t('net.outage.message'))}</Text>
         </Modal>
       )}
     </>
   );
 }
 
+const SPONSOR_URL = 'https://portaly.cc/pjh-eric/support';
+const SPONSOR_WORD = { 'zh-Hant': '贊助', 'zh-Hans': '赞助', en: 'Sponsorships' };
+/* 把提示文字中的「贊助」變成贊助連結 */
+function sponsorParts(text) {
+  const word = SPONSOR_WORD[getLang()] || '贊助';
+  const at = text.indexOf(word);
+  if (at < 0) return text;
+  return [text.slice(0, at), <a key="sponsor" href={SPONSOR_URL} target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', fontWeight: 900, textDecoration: 'underline' }}>{word}</a>, text.slice(at + word.length)];
+}

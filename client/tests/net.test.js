@@ -41,6 +41,8 @@ describe('30 秒斷線提示（只在大廳與房間）', () => {
     expect(L['zh-Hant']['net.outage.message']).toBe('歡迎贊助升級');
     expect(L['zh-Hans']['net.outage.message']).toBe('欢迎赞助升级');
     expect(L.en['net.outage.message']).toBe('Sponsorships to help us upgrade are welcome');
+    const shell = readFileSync(resolve(process.cwd(), 'src/shell.jsx'), 'utf8');
+    expect(shell).toContain('https://portaly.cc/pjh-eric/support');
   });
 });
 
