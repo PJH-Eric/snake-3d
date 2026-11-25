@@ -23,10 +23,6 @@ export class OutageWindow {
     this.shown = true;
     return true;
   }
-  static resetMonth(date, english) {
-    const next = new Date(date.getFullYear(), date.getMonth() + 1, 1);
-    return english ? next.toLocaleString('en-US', { month: 'long' }) : String(next.getMonth() + 1);
-  }
 }
 
 export class Net {

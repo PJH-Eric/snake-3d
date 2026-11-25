@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Net, OutageWindow } from '../src/net.js';
 
@@ -33,9 +35,12 @@ describe('30 秒斷線提示（只在大廳與房間）', () => {
     expect(o.shouldShow(929.99)).toBe(false);
     expect(o.shouldShow(930)).toBe(true);
   });
-  it('次月與跨年', () => {
-    for (let m = 0; m < 12; m++) expect(OutageWindow.resetMonth(new Date(2026, m, 28), false)).toBe(String(((m + 1) % 12) + 1));
-    expect(OutageWindow.resetMonth(new Date(2026, 11, 31), true)).toBe('January');
+  it('過載提示文案（三語系）', () => {
+    const L = JSON.parse(readFileSync(resolve(process.cwd(), '../shared/locales.json'), 'utf8'));
+    expect(L['zh-Hant']['net.outage.title']).toBe('目前伺服器過載休息中');
+    expect(L['zh-Hant']['net.outage.message']).toBe('歡迎贊助升級');
+    expect(L['zh-Hans']['net.outage.message']).toBe('欢迎赞助升级');
+    expect(L.en['net.outage.message']).toBe('Sponsorships to help us upgrade are welcome');
   });
 });
 

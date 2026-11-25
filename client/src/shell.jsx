@@ -129,12 +129,10 @@ export function GlobalLayer() {
       {outage && (
         <Modal title={t('net.outage.title')} width={520} onClose={() => app.set({ outage: false })}
           footer={<Button onClick={() => app.set({ outage: false })}>{t('common.ok')}</Button>}>
-          <Text>{t('net.outage.message', { month: monthText() })}</Text>
+          <Text>{t('net.outage.message')}</Text>
         </Modal>
       )}
     </>
   );
 }
 
-import { OutageWindow } from './net.js';
-function monthText() { return OutageWindow.resetMonth(new Date(), getLang() === 'en'); }

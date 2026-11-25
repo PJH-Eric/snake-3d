@@ -1,7 +1,7 @@
 {
  "zh-Hant": {
-  "net.outage.title": "線上暫時無法連線",
-  "net.outage.message": "免費伺服器額度將於 {month} 月 1 日重置，期間可繼續遊玩單機版。",
+  "net.outage.title": "目前伺服器過載休息中",
+  "net.outage.message": "歡迎贊助升級",
   "common.close": "關閉",
   "common.cancel": "取消",
   "common.ok": "確定",
@@ -337,7 +337,7 @@
   "inv.joinSpec": "進去觀戰",
   "inv.joinPlay": "加入遊戲",
   "lobby.noserver": "還沒設定線上伺服器",
-  "lobby.noserver.p": "這個網頁沒有設定 server URL。部署時請把 GAME_SERVER_URL 設成後端的 https 網址（詳見 README），現在只能玩單機。",
+  "lobby.noserver.p": "目前連不上伺服器，現在只能玩單機。",
   "lobby.solo": "改玩單機",
   "lobby.title": "線上大廳",
   "lobby.me": "我",
@@ -455,8 +455,8 @@
   "lang.zh-Hans": "简体中文"
  },
  "zh-Hans": {
-  "net.outage.title": "在线暂时无法连接",
-  "net.outage.message": "免费服务器额度将于 {month} 月 1 日重置，期间可继续游玩单机版。",
+  "net.outage.title": "目前服务器过载休息中",
+  "net.outage.message": "欢迎赞助升级",
   "common.close": "关闭",
   "common.cancel": "取消",
   "common.ok": "确定",
@@ -792,7 +792,7 @@
   "inv.joinSpec": "进去观战",
   "inv.joinPlay": "加入游戏",
   "lobby.noserver": "还没设置在线服务器",
-  "lobby.noserver.p": "这个网页没有设置 server URL。部署时请把 GAME_SERVER_URL 设成后端的 https 网址（详见 README），现在只能玩单机。",
+  "lobby.noserver.p": "目前连不上服务器，现在只能玩单机。",
   "lobby.solo": "改玩单机",
   "lobby.title": "在线大厅",
   "lobby.me": "我",
@@ -910,8 +910,8 @@
   "lang.zh-Hans": "简体中文"
  },
  "en": {
-  "net.outage.title": "Online unavailable",
-  "net.outage.message": "Free server quota resets on {month} 1. You can keep playing offline.",
+  "net.outage.title": "The server is overloaded and resting",
+  "net.outage.message": "Sponsorships to help us upgrade are welcome",
   "common.close": "Close",
   "common.cancel": "Cancel",
   "common.ok": "OK",
@@ -1247,7 +1247,7 @@
   "inv.joinSpec": "Watch",
   "inv.joinPlay": "Join game",
   "lobby.noserver": "No online server yet",
-  "lobby.noserver.p": "This page has no server URL. When deploying, set GAME_SERVER_URL to the backend's https address (see the README). For now only single-player works.",
+  "lobby.noserver.p": "The server is unavailable right now. Only solo play is available.",
   "lobby.solo": "Play solo instead",
   "lobby.title": "Online lobby",
   "lobby.me": "Me",
