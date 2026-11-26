@@ -73,9 +73,15 @@ function LangMenu() {
 
 export function TopRight() {
   const [open, setOpen] = useState(false);
+  const screen = useApp(s => s.screen);
   return (
     <>
       <div className="topright">
+        {screen === 'home' && (
+          <a className="btn btn-orange home-support" href={SPONSOR_URL} target="_blank" rel="noopener noreferrer">
+            <span aria-hidden="true">♥</span><span>{t('home.support')}</span>
+          </a>
+        )}
         <LangMenu />
         <IconButton icon="settings" label={t('set.title')} onClick={() => setOpen(true)} variant="orange" />
       </div>

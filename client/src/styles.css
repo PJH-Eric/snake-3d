@@ -369,3 +369,37 @@ body .lc-root {
   --lc-font: var(--font); --lc-radius: var(--r); --lc-z: 95;
 }
 body .lc-bubble, body .lc-panel { border: var(--bd) solid var(--ink); box-shadow: var(--shadow); }
+
+.home-support {
+  color: var(--ink);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  gap: 5px;
+  min-width: 44px;
+  min-height: 44px;
+  padding: 0 10px;
+  font-size: .875rem;
+  font-weight: 800;
+  line-height: 1;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.home-support:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+
+@media (max-width: 480px) {
+  .home-support {
+    flex-direction: column;
+    gap: 2px;
+    width: 50px;
+    padding-inline: 3px;
+    font-size: 11px;
+    letter-spacing: 0;
+  }
+  .home-support > [aria-hidden="true"] { font-size: 1rem; }
+}
+
+@media (max-width: 380px) {
+  .lobby-link { padding-inline: 8px; font-size: .8rem; }
+}
